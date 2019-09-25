@@ -118,8 +118,8 @@ function building()
         echo "[ADV]-------------FOR arm64  64-----------"
         echo "[ADV] arm64 mk-base-debian.sh"
         RELEASE=stretch TARGET=desktop ARCH=arm64 ./mk-base-debian.sh
-        echo "[ADV] mk-rootfs-stretch-arm64.sh"
-        VERSION=debug ARCH=arm64 ./mk-rootfs-stretch-arm64.sh
+        echo "[ADV] mk-rootfs-stretch.sh"
+        VERSION=debug ARCH=arm64 ./mk-rootfs-stretch.sh
         if [ "$NEW_MACHINE" != "dmssa53" ]; then
             echo "[ADV] add advantech "
             cp -aRL $CURR_PATH/$ROOT_DIR/rootfs/adv/* $CURR_PATH/$ROOT_DIR/rootfs
