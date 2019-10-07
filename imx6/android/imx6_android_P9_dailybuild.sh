@@ -170,7 +170,7 @@ function set_environment()
 	if [ "$1" == "sdk" ]; then
 		lunch sdk-userdebug
 	elif [ "$NEW_MACHINE" == "imx6" ]; then
-		lunch rsb_4411-userdebug
+		lunch rsb_4411_a1-userdebug
 	else
 		if [ "$TYPE" == "" ]; then
 			lunch $NEW_MACHINE-userdebug
