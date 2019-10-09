@@ -219,9 +219,9 @@ function prepare_images()
 function copy_image_to_storage()
 {
 	echo "[ADV] copy images to $OUTPUT_DIR"
-	generate_csv ${IMAGE_DIR}.tgz
+	generate_csv ${IMAGE_DIR}.tar.gz
 	mv ${IMAGE_DIR}.csv $OUTPUT_DIR
-	mv -f ${IMAGE_DIR}.tgz $OUTPUT_DIR
+	mv -f ${IMAGE_DIR}.tar.gz $OUTPUT_DIR
 	mv -f *.md5 $OUTPUT_DIR
 }
 
