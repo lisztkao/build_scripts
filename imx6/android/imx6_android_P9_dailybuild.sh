@@ -141,7 +141,7 @@ function building()
 		#make -j4 droid otapackage 2>> $CURR_PATH/$ROOT_DIR/$LOG_FILE
 		make -j8 bootloader 2>> $CURR_PATH/$ROOT_DIR/$LOG_FILE
 		make -j8 bootimage 2>> $CURR_PATH/$ROOT_DIR/$LOG2_FILE
-		make -j8 systemimage 2>> $CURR_PATH/$ROOT_DIR/$LOG3_FILE
+		make -j8 2>> $CURR_PATH/$ROOT_DIR/$LOG3_FILE
 	else
 		make -j8 $1 2>> $CURR_PATH/$ROOT_DIR/$LOG_FILE
 	fi
