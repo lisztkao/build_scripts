@@ -74,6 +74,9 @@ function building()
         echo "[ADV] build uboot"
 		cd $CURR_PATH/$ROOT_DIR/u-boot
 		#make clean
+		if [ "$NEW_MACHINE" == "dmssa53" ]; then
+			git checkout -b rk3399_linux_v220_dmssa53 remotes/advantech-github/rk3399_linux_v220_dmssa53
+		fi
 		./make.sh rk3399 >> $CURR_PATH/$ROOT_DIR/$LOG_FILE
 	elif [ "$1" == "kernel" ]; then
 		echo "[ADV] build kernel  = $KERNEL_CONFIG"
