@@ -29,20 +29,19 @@ OUTPUT_DIR="$CURR_PATH/$STORED/$DATE"
 
 #-- Advantech github android source code repository
 echo "[ADV-ROOT]  $ROOT_DIR"
-echo "[ADV] ANDROID_DEVICE_PATH = $CURR_PATH/$ROOT_DIR/device"
-echo "[ADV] ANDROID_VENDOR = $CURR_PATH/$ROOT_DIR/vendor"
-echo "[ADV] ANDROID_ART = $CURR_PATH/$ROOT_DIR/art"
-echo "[ADV] ANDROID_BUILD_PATH = $CURR_PATH/$ROOT_DIR/build"
-echo "[ADV] ANDROID_BOOTABLE_PATH = $CURR_PATH/$ROOT_DIR/bootable"
-echo "[ADV] ANDROID_DEVELOPMENT_PATH = $CURR_PATH/$ROOT_DIR/development"
-echo "[ADV] ANDROID_EXTERNAL_PATH = $CURR_PATH/$ROOT_DIR/external"
-echo "[ADV] ANDROID_FRAMEWORKS_PATH = $CURR_PATH/$ROOT_DIR/frameworks"
-echo "[ADV] ANDROID_HARDWARE_PATH = $CURR_PATH/$ROOT_DIR/hardware"
-echo "[ADV] ANDROID_PACKAGES_PATH = $CURR_PATH/$ROOT_DIR/packages"
-echo "[ADV] ANDROID_SYSTEM_PATH = $CURR_PATH/$ROOT_DIR/system"
-#--------------------------------------------------
-echo "[ADV] ANDROID_BUILD_URL = ${ANDROID_BUILD_URL}"
-echo "[ADV] ANDROID_PATCH = $CURR_PATH/$ROOT_DIR/patches_android_9.0.0_r35"
+ANDROID_DEVICE_PATH=$CURR_PATH/$ROOT_DIR/device
+ANDROID_VENDOR_PATH=$CURR_PATH/$ROOT_DIR/vendor
+ANDROID_ART_PATH=$CURR_PATH/$ROOT_DIR/art
+ANDROID_BUILD_PATH=$CURR_PATH/$ROOT_DIR/build
+ANDROID_BOOTABLE_PATH=$CURR_PATH/$ROOT_DIR/bootable
+ANDROID_DEVELOPMENT_PATH=$CURR_PATH/$ROOT_DIR/development
+ANDROID_EXTERNAL_PATH=$CURR_PATH/$ROOT_DIR/external
+ANDROID_FRAMEWORKS_PATH=$CURR_PATH/$ROOT_DIR/frameworks
+ANDROID_HARDWARE_PATH=$CURR_PATH/$ROOT_DIR/hardware
+ANDROID_PACKAGES_PATH=$CURR_PATH/$ROOT_DIR/packages
+ANDROID_SYSTEM_PATH$CURR_PATH/$ROOT_DIR/system
+ANDROID_BUILD_URL=${ANDROID_BUILD_URL}
+ANDROID_PATCH_PATH=$CURR_PATH/$ROOT_DIR/patches_android_9.0.0_r35
 
 #======================
 AND_BSP="android"
@@ -401,35 +400,35 @@ echo "[ADV] check_tag_and_checkout"
 
 # Check ADVANTECH android source code tag exist or not, and checkout to tag version
 check_tag_and_checkout $ANDROID_DEVICE_PATH
-#check_tag_and_checkout $ANDROID_VENDOR
-#check_tag_and_checkout $ANDROID_ART
-#check_tag_and_checkout $ANDROID_BUILD_PATH
-#check_tag_and_checkout $ANDROID_BOOTABLE_PATH
-#check_tag_and_checkout $ANDROID_DEVELOPMENT_PATH
-#check_tag_and_checkout $ANDROID_EXTERNAL_PATH
-#check_tag_and_checkout $ANDROID_FRAMEWORKS_PATH
-#check_tag_and_checkout $ANDROID_HARDWARE_PATH
-#check_tag_and_checkout $ANDROID_PACKAGES_PATH
-#check_tag_and_checkout $ANDROID_SYSTEM_PATH
-#check_tag_and_checkout $ANDROID_PATCH
+check_tag_and_checkout $ANDROID_VENDOR_PATH
+check_tag_and_checkout $ANDROID_ART_PATH
+check_tag_and_checkout $ANDROID_BUILD_PATH
+check_tag_and_checkout $ANDROID_BOOTABLE_PATH
+check_tag_and_checkout $ANDROID_DEVELOPMENT_PATH
+check_tag_and_checkout $ANDROID_EXTERNAL_PATH
+check_tag_and_checkout $ANDROID_FRAMEWORKS_PATH
+check_tag_and_checkout $ANDROID_HARDWARE_PATH
+check_tag_and_checkout $ANDROID_PACKAGES_PATH
+check_tag_and_checkout $ANDROID_SYSTEM_PATH
+check_tag_and_checkout $ANDROID_PATCH_PATH
 
 # Add git tag
 echo "[ADV] Add tag"
 auto_add_tag $CURR_PATH/$ROOT_DIR/$UBOOT_PATH
-#auto_add_tag $CURR_PATH/$ROOT_DIR/$KERNEL_PATH
-#auto_add_tag $CURR_PATH/$ROOT_DIR/device
-#auto_add_tag $CURR_PATH/$ROOT_DIR/vendor
-#auto_add_tag $CURR_PATH/$ROOT_DIR/art
-#auto_add_tag $CURR_PATH/$ROOT_DIR/build
-#auto_add_tag $CURR_PATH/$ROOT_DIR/bootable
-#auto_add_tag $CURR_PATH/$ROOT_DIR/development
-#auto_add_tag $CURR_PATH/$ROOT_DIR/external
-#auto_add_tag $CURR_PATH/$ROOT_DIR/frameworks
-#auto_add_tag $CURR_PATH/$ROOT_DIR/hardware
-#auto_add_tag $CURR_PATH/$ROOT_DIR/packages
-#auto_add_tag $CURR_PATH/$ROOT_DIR/system
-#auto_add_tag $CURR_PATH/$ROOT_DIR/patches_android_9.0.0_r35
-exit 0
+auto_add_tag $CURR_PATH/$ROOT_DIR/$KERNEL_PATH
+auto_add_tag $ANDROID_DEVICE_PATH
+auto_add_tag $ANDROID_VENDOR_PATH
+auto_add_tag $ANDROID_ART_PATH
+auto_add_tag $ANDROID_BUILD_PATH
+auto_add_tag $ANDROID_BOOTABLE_PATH
+auto_add_tag $ANDROID_DEVELOPMENT_PATH
+auto_add_tag $ANDROID_EXTERNAL_PATH
+auto_add_tag $ANDROID_FRAMEWORKS_PATH
+auto_add_tag $ANDROID_HARDWARE_PATH
+auto_add_tag $ANDROID_PACKAGES_PATH
+auto_add_tag $ANDROID_SYSTEM_PATH
+auto_add_tag $ANDROID_PATCH_PATH
+
 # ------------REMOVE FOR TEST   ------------- #
 # Create manifests xml and commit
 echo "[ADV] create_xml_and_commit"
