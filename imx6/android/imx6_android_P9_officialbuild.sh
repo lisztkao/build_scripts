@@ -83,8 +83,8 @@ function check_tag_and_checkout()
 {
 	FILE_PATH=$1
 	echo "check_tag_and_checkout FILE_PATH:${FILE_PATH}"
-	if [ -d "$CURR_PATH/$FILE_PATH" ];then
-		cd $CURR_PATH/$FILE_PATH
+	if [ -d "$FILE_PATH" ];then
+		cd $FILE_PATH
 		RESPOSITORY_TAG=`git tag | grep $VER_TAG`
 		if [ "$RESPOSITORY_TAG" != "" ]; then
 			echo "[ADV] [FILE_PATH] repository has been tagged ,and check to this $VER_TAG version"
@@ -97,7 +97,7 @@ function check_tag_and_checkout()
 		fi
 		cd $CURR_PATH
 	else
-		echo "[ADV] Directory $ROOT_DIR/$FILE_PATH doesn't exist"
+		echo "[ADV] Directory /$FILE_PATH doesn't exist"
 		exit 1
 	fi
 }
@@ -122,7 +122,6 @@ function auto_add_tag()
 {
 	FILE_PATH=$1
 	echo "[ADV] $FILE_PATH"
-	cd $CURR_PATH
 	if [ -d "$FILE_PATH" ];then
 			cd $FILE_PATH
 			HEAD_HASH_ID=`git rev-parse HEAD`
@@ -175,6 +174,7 @@ function update_revision_for_xml()
 
 function create_xml_and_commit()
 {
+	echo "[ADV]VER_TAG=$VER_TAG"
 	if [ -d "$ROOT_DIR/.repo/manifests" ];then
 		echo "[ADV] Create XML file"
 		cd $ROOT_DIR/.repo
