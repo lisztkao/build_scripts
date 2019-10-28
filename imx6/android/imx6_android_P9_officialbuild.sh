@@ -39,7 +39,7 @@ ANDROID_EXTERNAL_PATH=$CURR_PATH/$ROOT_DIR/external
 ANDROID_FRAMEWORKS_PATH=$CURR_PATH/$ROOT_DIR/frameworks
 ANDROID_HARDWARE_PATH=$CURR_PATH/$ROOT_DIR/hardware
 ANDROID_PACKAGES_PATH=$CURR_PATH/$ROOT_DIR/packages
-ANDROID_SYSTEM_PATH$CURR_PATH/$ROOT_DIR/system
+ANDROID_SYSTEM_PATH=$CURR_PATH/$ROOT_DIR/system
 ANDROID_BUILD_URL=${ANDROID_BUILD_URL}
 ANDROID_PATCH_PATH=$CURR_PATH/$ROOT_DIR/patches_android_9.0.0_r35
 
@@ -97,7 +97,7 @@ function check_tag_and_checkout()
 		fi
 		cd $CURR_PATH
 	else
-		echo "[ADV] Directory /$FILE_PATH doesn't exist"
+		echo "[ADV] Directory $FILE_PATH doesn't exist"
 		exit 1
 	fi
 }
