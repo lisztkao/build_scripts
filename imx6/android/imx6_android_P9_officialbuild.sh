@@ -83,8 +83,8 @@ function check_tag_and_checkout()
 {
 	FILE_PATH=$1
 	echo "check_tag_and_checkout FILE_PATH:${FILE_PATH}"
-	if [ -d "$CURR_PATH/$ROOT_DIR/$FILE_PATH" ];then
-		cd $CURR_PATH/$ROOT_DIR/$FILE_PATH
+	if [ -d "$CURR_PATH/$FILE_PATH" ];then
+		cd $CURR_PATH/$FILE_PATH
 		RESPOSITORY_TAG=`git tag | grep $VER_TAG`
 		if [ "$RESPOSITORY_TAG" != "" ]; then
 			echo "[ADV] [FILE_PATH] repository has been tagged ,and check to this $VER_TAG version"
