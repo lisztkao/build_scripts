@@ -100,7 +100,8 @@ function building()
     elif [ "$1" == "debian" ]; then
         cd $CURR_PATH/$ROOT_DIR/rootfs
         if [ "$NEW_MACHINE" == "dmssa53" ]; then
-            git checkout -b rk3399_v220_dmssa53 remotes/m/rk3399_v220_dmssa53
+            #git checkout -b rk3399_v220_dmssa53 remotes/m/rk3399_v220_dmssa53
+			git checkout -b rk3399_linux_v220_dmssa53 remotes/origin/rk3399_linux_v220_dmssa53
         fi
         echo "[ADV] install tools for build debian"
         sudo apt-get install -y binfmt-support
