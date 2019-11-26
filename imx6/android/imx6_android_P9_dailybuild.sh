@@ -241,22 +241,22 @@ elif [ "$BSP_XML" == "" ] ; then
 else
     repo init -u $BSP_URL -b $BSP_BRANCH -m $BSP_XML
 fi
-#repo sync -j8
+repo sync -j8
 
 echo "[ADV] patches android source code"
-#patches_android_code
-echo "SOC_NAME=${SOC_NAME}"
+patches_android_code
+
 echo "[ADV] build images"
 for NEW_MACHINE in $MACHINE_LIST
 do
 	echo "[ADV] build android images"
-	#build_android_images
+	build_android_images
 	echo "[ADV] perpare_image"
 	prepare_images
 	echo "[ADV] copy_image_to_storage"
-	#copy_image_to_storage
+	copy_image_to_storage
 	echo "[ADV] save_temp_log"
-	#save_temp_log
+	save_temp_log
 done
 
 # Copy downloads to backup
