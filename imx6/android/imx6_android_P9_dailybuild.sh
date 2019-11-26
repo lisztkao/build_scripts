@@ -252,7 +252,7 @@ do
 	echo "[ADV] build android images"
 	#build_android_images
 	echo "[ADV] perpare_image"
-	#prepare_images
+	prepare_images
 	echo "[ADV] copy_image_to_storage"
 	#copy_image_to_storage
 	echo "[ADV] save_temp_log"
