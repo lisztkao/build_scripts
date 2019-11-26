@@ -3,15 +3,15 @@ MACHINE_LIST=""
 SOC_NAME=""
 if [ $RSB4411A1 == true ]; then
 	MACHINE_LIST="$MACHINE_LIST rsb_4411_a1"
-	SOC_NAME="$SOC_NAME imx6q"
+	SOC_NAME="imx6q"
 fi
 if  [ $ROM5720A1 == true ]; then
 	MACHINE_LIST="$MACHINE_LIST rom5720_a1"
-	SOC_NAME="$SOC_NAME imx8mq"
+	SOC_NAME="imx8mq"
 fi
 if  [ $ROM7720A1 == true ]; then
 	MACHINE_LIST="$MACHINE_LIST rom7720_a1"
-	SOC_NAME="$SOC_NAME imx8qm"
+	SOC_NAME="imx8qm"
 fi
 
 export MACHINE_LIST
