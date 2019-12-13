@@ -321,6 +321,9 @@ function patches_android_code()
 	echo "[ADV] patches_android_Kernel_code"
 	cd $CURR_PATH/$ROOT_DIR/vendor/nxp-opensource/kernel_imx
 	patch -p1 <../../../patches_android_9.0.0_r35/9001-Linux_Yocto_4.14.98_2.0.0-to-android-9.0.0_r35.patch
+
+	cd $CURR_PATH/$ROOT_DIR/device
+	git checkout -b android-9.0.0_r35 remotes/advantech-github/android-9.0.0_r35
 }
 
 function set_environment()
