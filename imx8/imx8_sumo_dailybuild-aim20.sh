@@ -74,6 +74,11 @@ function define_cpu_type()
                         KERNEL_CPU_TYPE="imx8mq"
                         CPU_TYPE="iMX8M"
                         ;;
+                "8MM")
+                        PRODUCT=`expr $1 : '\(.*\).*-'`
+                        KERNEL_CPU_TYPE="imx8mm"
+                        CPU_TYPE="iMX8MM"
+                        ;;
                 "8QM")
                         PRODUCT=`expr $1 : '\(.*\).*-'`
                         KERNEL_CPU_TYPE="imx8qm"
@@ -264,8 +269,32 @@ function build_yocto_images()
         building linux-imx cleansstate
         building linux-imx
 
+        # Clean package to avoid build error
+	echo "[ADV] build_yocto_image: clean virtual_libg2d"
+	building imx-qtapplications cleansstate
+        building gstreamer1.0-rtsp-server cleansstate
+	building gst-examples cleansstate
+	building freerdp cleansstate
+	building imx-gpu-apitrace cleansstate
+	building gstreamer1.0-plugins-good cleansstate
+	building gstreamer1.0-plugins-base cleansstate
+	building gstreamer1.0-plugins-bad cleansstate
+	building kmscube cleansstate
+	building imx-gpu-sdk cleansstate
+	building opencv cleansstate
+	building imx-gst1.0-plugin cleansstate
+	building weston cleansstate
+
 	# Build full image
         building $DEPLOY_IMAGE_NAME
+
+	# Re-build qspi U-Boot
+	if [ "$PRODUCT" == "rom7720a1" ] || [ "$PRODUCT" == "rom5620a1" ]; then
+		echo "[ADV] build_yocto_image: build qspi u-boot"
+		echo "UBOOT_CONFIG = \"fspi\"" >> $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/conf/local.conf
+		building imx-boot
+		sed -i "/UBOOT_CONFIG/d" $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/conf/local.conf
+	fi
 }
 
 function prepare_images()
