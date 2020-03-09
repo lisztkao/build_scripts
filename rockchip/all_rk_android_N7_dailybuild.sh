@@ -34,7 +34,7 @@ export MACHINE_LIST
 ./rk_android_N7_dailybuild.sh ds211 $VERSION_NUM
 fi
 #DS100_projects
-if [ "$DS100" == "true" ]; then
+if [ "$DS100_DeviceOn" == "true" ]; then
 	KERNEL_DTB=rk3399-ds100.img
 	KERNEL_CONFIG=rockchip_ds100_defconfig
 	MACHINE_LIST="$MACHINE_LIST ds100_DeviceOn"
