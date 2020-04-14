@@ -24,8 +24,7 @@ OUTPUT_DIR="$CURR_PATH/$STORED/$DATE"
 AND_BSP="android"
 AND_BSP_VER="7.1"
 AND_VERSION="android_N7.1.2"
-DEVICE_ON_BRANCH="android-7.1.2_r6_deviceon"
-ANDROID_DEVICE_PATH="$CURR_PATH/$ROOT_DIR/device"
+
 #======================
 
 # Make storage folder
@@ -327,11 +326,6 @@ else
     repo init -u $BSP_URL -b $BSP_BRANCH -m $BSP_XML
 fi
 repo sync
-
-if [ ${MACHINE_LIST} == "ds100_DeviceOn" ]; then
-	cd $ANDROID_DEVICE_PATH
-	git checkout -b $DEVICE_ON_BRANCH remotes/advantech-gitlab/$DEVICE_ON_BRANCH
-fi
 
 else #"$PRODUCT" != "$VER_PREFIX"
 echo "[ADV] build images"

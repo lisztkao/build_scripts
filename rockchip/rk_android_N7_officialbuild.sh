@@ -59,7 +59,7 @@ echo "[ADV] ANDROID_VENDOR_PATH = $CURR_PATH/$ROOT_DIR/vendor"
 AND_BSP="android"
 AND_BSP_VER="7.1"
 AND_VERSION="android_N7.1.2"
-DEVICE_ON_BRANCH="android-7.1.2_r6_deviceon"
+
 #======================
 
 # Make storage folder
@@ -97,11 +97,6 @@ function check_tag_and_checkout()
 
         if [ -d "$CURR_PATH/$ROOT_DIR/$FILE_PATH" ];then
                 cd $CURR_PATH/$ROOT_DIR/$FILE_PATH
-				
-				if [ ${MACHINE_LIST} == "ds100_DeviceOn" -a $FILE_PATH == $ANDROID_DEVICE_PATH ]; then
-					git checkout -b $DEVICE_ON_BRANCH remotes/advantech-gitlab/$DEVICE_ON_BRANCH
-				fi
-				
                 RESPOSITORY_TAG=`git tag | grep $VER_TAG`
                 if [ "$RESPOSITORY_TAG" != "" ]; then
                         echo "[ADV] [FILE_PATH] repository has been tagged ,and check to this $VER_TAG version"
