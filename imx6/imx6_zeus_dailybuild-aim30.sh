@@ -215,7 +215,7 @@ function building()
         LOG_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$DATE"_log
 
         if [ "$1" == "populate_sdk" ]; then
-                if [ "$DEPLOY_IMAGE_NAME" == "fsl-image-validation-imx" ]; then
+                if [ "$DEPLOY_IMAGE_NAME" == "fsl-image-full" ]; then
                         echo "[ADV] bitbake meta-toolchain"
                         bitbake meta-toolchain
                 else
@@ -246,7 +246,7 @@ function set_environment()
 		EULA=1 source setup-environment $BUILDALL_DIR
 	else
 		# First build
-		EULA=1 DISTRO=$BACKEND_TYPE MACHINE=${KERNEL_CPU_TYPE}${PRODUCT} source fsl-setup-release.sh -b $BUILDALL_DIR
+		EULA=1 DISTRO=$BACKEND_TYPE MACHINE=${KERNEL_CPU_TYPE}${PRODUCT} source imx-setup-release.sh -b $BUILDALL_DIR
 	fi
 }
 
@@ -263,8 +263,21 @@ function build_yocto_images()
         building linux-imx cleansstate
         building linux-imx
 
-        echo "[ADV] Build recovery image!"
-        building initramfs-debug-image
+        # Clean package to avoid build error
+	echo "[ADV] build_yocto_image: clean virtual_libg2d"
+	building imx-qtapplications cleansstate
+        building gstreamer1.0-rtsp-server cleansstate
+	building gst-examples cleansstate
+	building freerdp cleansstate
+	building imx-gpu-apitrace cleansstate
+	building gstreamer1.0-plugins-good cleansstate
+	building gstreamer1.0-plugins-base cleansstate
+	building gstreamer1.0-plugins-bad cleansstate
+	building kmscube cleansstate
+	building imx-gpu-sdk cleansstate
+	building opencv cleansstate
+	building imx-gst1.0-plugin cleansstate
+	building weston cleansstate
 
 	# Build full image
         building $DEPLOY_IMAGE_NAME
@@ -325,11 +338,6 @@ function prepare_images()
                         chmod 755 $CURR_PATH/mkspi-advboot.sh
                         sudo cp $CURR_PATH/mkspi-advboot.sh $OUTPUT_DIR/recovery/
                         ;;
-                "eng")
-                        FILE_NAME=`readlink $DEPLOY_IMAGE_PATH/"${DEPLOY_IMAGE_NAME}-${KERNEL_CPU_TYPE}${PRODUCT}.sdcard" | cut -d '.' -f 1`"*.rootfs.eng.sdcard"
-                        echo "[ADV] Copy eng $FILE_NAME"
-                        cp $DEPLOY_IMAGE_PATH/$FILE_NAME $OUTPUT_DIR
-                        ;;
                 *)
                         echo "[ADV] prepare_images: invalid parameter #1!"
                         exit 1;
@@ -352,25 +360,6 @@ function prepare_images()
         rm -rf $OUTPUT_DIR
 }
 
-function generate_OTA_update_package()
-{
-        echo "[ADV] generate OTA update package"
-        cp ota-package.sh $DEPLOY_IMAGE_PATH
-        cd $DEPLOY_IMAGE_PATH
-
-        echo "[ADV] creating update_${IMAGE_DIR}_kernel.zip for OTA package ..."
-        HW_VER=$((${#PRODUCT}-2))
-        DTB_FILE_IN=`ls zImage-${KERNEL_CPU_TYPE}-${PRODUCT:0:$HW_VER}-${PRODUCT:$HW_VER:2}.dtb`
-        DTB_FILE=`echo $DTB_FILE_IN | cut -d '-' -f 2-`
-        cp $DTB_FILE_IN $DTB_FILE
-        ./ota-package.sh -k zImage -d ${DTB_FILE} -m modules-${KERNEL_CPU_TYPE}${PRODUCT}.tgz -o update_${IMAGE_DIR}_kernel
-
-        echo "[ADV] creating update_${IMAGE_DIR}_rootfs.zip for OTA package ..."
-        ./ota-package.sh -r $DEPLOY_IMAGE_NAME-${KERNEL_CPU_TYPE}${PRODUCT}.ext4 -o update_${IMAGE_DIR}_rootfs
-
-        mv update*.zip $CURR_PATH
-        cd $CURR_PATH
-}
 
 function copy_image_to_storage()
 {
@@ -396,9 +385,6 @@ function copy_image_to_storage()
 			generate_csv $IMAGE_DIR.img.gz
 			mv ${IMAGE_DIR}.img.csv $STORAGE_PATH
 			mv -f $IMAGE_DIR.img.gz $STORAGE_PATH
-		;;
-		"ota")
-			mv -f update*.zip $STORAGE_PATH
 		;;
 		*)
 		echo "[ADV] copy_image_to_storage: invalid parameter #1!"
@@ -459,15 +445,10 @@ else #"$PRODUCT" != "$VER_PREFIX"
         prepare_images modules $MODULES_DIR
         copy_image_to_storage modules
 
-        echo "[ADV] generate $MEMORY eng image"
-        ENG_IMAGE_DIR="$IMAGE_DIR"_"$MEMORY"_eng
-        prepare_images eng $ENG_IMAGE_DIR
-        copy_image_to_storage eng
-
-        echo "[ADV] generate ota packages"
-        generate_OTA_update_package
-        copy_image_to_storage ota
-
+#        echo "[ADV] generate $MEMORY eng image"
+#        ENG_IMAGE_DIR="$IMAGE_DIR"_"$MEMORY"_eng
+#        prepare_images eng $ENG_IMAGE_DIR
+#        copy_image_to_storage eng
         save_temp_log
 fi
 

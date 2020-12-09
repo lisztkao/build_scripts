@@ -99,11 +99,24 @@ function generate_mksd_linux()
     sudo chown 0.0 $OUTPUT_DIR/mk_inand/mksd-linux.sh
 }
 
+function copy_folder()
+{
+    SRC_DIR=$1
+    DEST_DIR=$2
+    sudo mkdir -p $MOUNT_POINT/${DEST_DIR}
+    sudo cp -a $MOUNT_POINT/${SRC_DIR}/* $MOUNT_POINT/${DEST_DIR}/
+    sudo rm -rf $MOUNT_POINT/${SRC_DIR}
+}
+
 function create_ubuntu_image()
 {
-    SDCARD_SIZE=3700
+    case ${AIM_VERSION} in
+    AIM20) SDCARD_SIZE=3700;;
+    AIM30) SDCARD_SIZE=6500;;
+    *) echo "cannot read AIM version from \"$AIM_VERSION\""; exit 1 ;;
+    esac
 
-    YOCTO_IMAGE_SDCARD="fsl-image-*${CPU_TYPE_Module}${NEW_MACHINE}*.sdcard"
+    YOCTO_IMAGE_SDCARD="*-image-*${CPU_TYPE_Module}${NEW_MACHINE}*.sdcard"
     YOCTO_IMAGE_TGZ="${PRODUCT}${VERSION_TAG}_${CPU_TYPE}_flash_tool.tgz"
     UBUNTU_IMAGE="${UBUNTU_PRODUCT}${VERSION_TAG}_${CPU_TYPE}_${DATE}.img"
 
@@ -156,16 +169,19 @@ EOF
     # Update Ubuntu rootfs
     echo "[ADV] update rootfs"
     sudo mount ${LOOP_DEV}p2 $MOUNT_POINT/
+    sudo mv $MOUNT_POINT/etc/modprobe.d $MOUNT_POINT/.modprobe.d
+    sudo mv $MOUNT_POINT/etc/modules-load.d $MOUNT_POINT/.modules-load.d
+    sudo mv $MOUNT_POINT/etc/udev $MOUNT_POINT/.udev
     sudo mv $MOUNT_POINT/lib/modules $MOUNT_POINT/.modules
     sudo mv $MOUNT_POINT/lib/firmware $MOUNT_POINT/.firmware
     sudo rm -rf $MOUNT_POINT/*
     sudo tar zxf ${UBUNTU_ROOTFS} -C $MOUNT_POINT/
-    sudo mkdir -p $MOUNT_POINT/lib/modules
-    sudo cp -a $MOUNT_POINT/.modules/* $MOUNT_POINT/lib/modules/
-    sudo rm -rf $MOUNT_POINT/.modules
-    sudo mkdir -p $MOUNT_POINT/lib/firmware
-    sudo cp -a $MOUNT_POINT/.firmware/* $MOUNT_POINT/lib/firmware/
-    sudo rm -rf $MOUNT_POINT/.firmware
+    copy_folder .modprobe.d etc/modprobe.d
+    copy_folder .modules-load.d etc/modules-load.d
+    copy_folder .udev etc/udev
+    copy_folder .modules lib/modules
+    copy_folder .firmware lib/firmware
+
     sudo sh -c "echo ${CPU_TYPE_Module}${NEW_MACHINE} > $MOUNT_POINT/etc/hostname"
     sudo sed -i "s/\(127\.0\.1\.1 *\).*/\1${CPU_TYPE_Module}${NEW_MACHINE}/" $MOUNT_POINT/etc/hosts
     sudo umount $MOUNT_POINT
@@ -199,7 +215,9 @@ TOTAL_LIST=" \
     ROM7720A1_8QM \
     ROM5720A1_8M \
     ROM5620A1_8X \
-    ROM5721A1_8MM
+    ROM3620A1_8X \
+    ROM5721A1_8MM \
+    RSB3720A1_8MP
 "
 MACHINE_LIST=""
 
@@ -226,6 +244,7 @@ do
     8m)  CPU_TYPE="iMX8M";  CPU_TYPE_Module="imx8mq"  ;;
     8mm) CPU_TYPE="iMX8MM"; CPU_TYPE_Module="imx8mm"  ;;
     8qm) CPU_TYPE="iMX8QM"; CPU_TYPE_Module="imx8qm"  ;;
+    8mp) CPU_TYPE="iMX8MP"; CPU_TYPE_Module="imx8mp"  ;;
     *) echo "cannot read CPU type from \"$NEW_MACHINE\""; exit 1 ;;
     esac
 
@@ -234,7 +253,9 @@ do
     rom7720a1) PROD="7720A1" ;;
     rom5720a1) PROD="5720A1" ;;
     rom5620a1) PROD="5620A1" ;;
+    rom3620a1) PROD="3620A1" ;;
     rom5721a1) PROD="5721A1" ;;
+    rsb3720a1) PROD="3720A1" ;;
     *) echo "cannot handle \"$NEW_MACHINE\""; exit 1 ;;
     esac
 

@@ -256,6 +256,33 @@ function set_environment()
 	fi
 }
 
+function clean_yocto_packages()
+{
+        echo "[ADV] build_yocto_image: clean for virtual_libg2d"
+        PACKAGE_LIST=" \
+		imx-qtapplications gstreamer1.0-rtsp-server gst-examples freerdp \
+		imx-gpu-apitrace gstreamer1.0-plugins-good gstreamer1.0-plugins-base \
+		gstreamer1.0-plugins-bad kmscube imx-gpu-sdk opencv imx-gst1.0-plugin \
+		weston "
+        for PACKAGE in ${PACKAGE_LIST}
+        do
+                building ${PACKAGE} cleansstate
+        done
+
+        if [ -z ${DEPLOY_IMAGE_NAME##*qt*} ] ; then
+        echo "[ADV] build_yocto_image: clean for qt5"
+        PACKAGE_LIST=" \
+		qtbase-native qtbase qtdeclarative qtxmlpatterns qtwayland qtmultimedia \
+		qt3d qtgraphicaleffects qt5nmapcarousedemo qt5everywheredemo quitbattery \
+		qtsmarthome qtsensors cinematicexperience qt5nmapper quitindicators qtlocation \
+		qtwebkit qtwebkit-examples qtwebengine chromium-ozone-wayland "
+        for PACKAGE in ${PACKAGE_LIST}
+        do
+                building ${PACKAGE} cleansstate
+        done
+        fi
+}
+
 function build_yocto_images()
 {
         set_environment
@@ -270,26 +297,16 @@ function build_yocto_images()
         building linux-imx
 
         # Clean package to avoid build error
-	echo "[ADV] build_yocto_image: clean virtual_libg2d"
-	building imx-qtapplications cleansstate
-        building gstreamer1.0-rtsp-server cleansstate
-	building gst-examples cleansstate
-	building freerdp cleansstate
-	building imx-gpu-apitrace cleansstate
-	building gstreamer1.0-plugins-good cleansstate
-	building gstreamer1.0-plugins-base cleansstate
-	building gstreamer1.0-plugins-bad cleansstate
-	building kmscube cleansstate
-	building imx-gpu-sdk cleansstate
-	building opencv cleansstate
-	building imx-gst1.0-plugin cleansstate
-	building weston cleansstate
+        clean_yocto_packages
+
+        echo "[ADV] Build recovery image!"
+        building initramfs-debug-image
 
 	# Build full image
         building $DEPLOY_IMAGE_NAME
 
 	# Re-build qspi U-Boot
-	if [ "$PRODUCT" == "rom7720a1" ] || [ "$PRODUCT" == "rom5620a1" ] || [ "$PRODUCT" == "rom5721a1" ]; then
+	if [ "$PRODUCT" == "rom7720a1" ] || [ "$PRODUCT" == "rom5620a1" ] || [ "$PRODUCT" == "rom3620a1" ] || [ "$PRODUCT" == "rom5721a1" ]; then
 		echo "[ADV] build_yocto_image: build qspi u-boot"
 		echo "UBOOT_CONFIG = \"fspi\"" >> $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/conf/local.conf
 		building imx-boot
@@ -336,6 +353,17 @@ function prepare_images()
                         bunzip2 -f $DEPLOY_IMAGE_PATH/$FILE_NAME.bz2
                         cp $DEPLOY_IMAGE_PATH/$FILE_NAME $OUTPUT_DIR
                         ;;
+		"individually")
+			mkdir $OUTPUT_DIR/image $OUTPUT_DIR/mk_inand
+			sudo cp $CURR_PATH/individually-script-tool/* $OUTPUT_DIR/mk_inand/
+			sudo chmod 755 $OUTPUT_DIR/mk_inand/*
+                        FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.tar.bz2"
+                        cp $DEPLOY_IMAGE_PATH/$FILE_NAME 					$OUTPUT_DIR/image/rootfs.tar.bz2
+			cp $DEPLOY_IMAGE_PATH/adv-${KERNEL_CPU_TYPE}*dtb			$OUTPUT_DIR/image
+			cp $DEPLOY_IMAGE_PATH/Image						$OUTPUT_DIR/image
+			cp $DEPLOY_IMAGE_PATH/imx-boot-"${KERNEL_CPU_TYPE}${PRODUCT}"-sd.bin	$OUTPUT_DIR/image/flash.bin
+			cp $DEPLOY_IMAGE_PATH/"${KERNEL_CPU_TYPE}"*bin				$OUTPUT_DIR/image
+			;;
                 "flash")
                         mkdir $OUTPUT_DIR/image $OUTPUT_DIR/mk_inand
                         # normal image
@@ -352,7 +380,7 @@ function prepare_images()
 
         # Package image file
         case $IMAGE_TYPE in
-                "flash" | "modules" | "misc" | "imx-boot")
+                "flash" | "modules" | "misc" | "imx-boot" | "individually")
                         echo "[ADV] creating ${OUTPUT_DIR}.tgz ..."
                         tar czf ${OUTPUT_DIR}.tgz $OUTPUT_DIR
                         generate_md5 ${OUTPUT_DIR}.tgz
@@ -366,6 +394,24 @@ function prepare_images()
         rm -rf $OUTPUT_DIR
 }
 
+function generate_OTA_update_package()
+{
+        echo "[ADV] generate OTA update package"
+        cp ota-package.sh $DEPLOY_IMAGE_PATH
+        cd $DEPLOY_IMAGE_PATH
+
+        echo "[ADV] creating update_${IMAGE_DIR}_kernel.zip for OTA package ..."
+        HW_VER=$((${#PRODUCT}-2))
+        DTB_FILE=`ls adv-${KERNEL_CPU_TYPE}-${PRODUCT:0:$HW_VER}-${PRODUCT:$HW_VER:2}.dtb`
+        ./ota-package.sh -k Image -d ${DTB_FILE} -m modules-${KERNEL_CPU_TYPE}${PRODUCT}.tgz -o update_${IMAGE_DIR}_kernel
+
+        echo "[ADV] creating update_${IMAGE_DIR}_rootfs.zip for OTA package ..."
+        ./ota-package.sh -r $DEPLOY_IMAGE_NAME-${KERNEL_CPU_TYPE}${PRODUCT}.ext4 -o update_${IMAGE_DIR}_rootfs
+
+        mv update*.zip $CURR_PATH
+        cd $CURR_PATH
+}
+
 function copy_image_to_storage()
 {
 	echo "[ADV] copy $1 images to $STORAGE_PATH"
@@ -376,6 +422,9 @@ function copy_image_to_storage()
 		;;
 		"flash")
 			mv -f ${FLASH_DIR}.tgz $STORAGE_PATH
+		;;
+		"individually")
+			mv -f ${INDIVIDUAL_DIR}.tgz $STORAGE_PATH
 		;;
 		"misc")
 			mv -f ${MISC_DIR}.tgz $STORAGE_PATH
@@ -390,6 +439,9 @@ function copy_image_to_storage()
 			generate_csv $IMAGE_DIR.img.gz
 			mv ${IMAGE_DIR}.img.csv $STORAGE_PATH
 			mv -f $IMAGE_DIR.img.gz $STORAGE_PATH
+		;;
+		"ota")
+			mv -f update*.zip $STORAGE_PATH
 		;;
 		*)
 		echo "[ADV] copy_image_to_storage: invalid parameter #1!"
@@ -438,6 +490,11 @@ else #"$PRODUCT" != "$VER_PREFIX"
         prepare_images flash $FLASH_DIR
         copy_image_to_storage flash
 
+        echo "[ADV] create individually script tool "
+        INDIVIDUAL_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_individually_script_tool
+        prepare_images individually $INDIVIDUAL_DIR
+        copy_image_to_storage individually
+
         echo "[ADV] create imx-boot files"
         DEPLOY_IMX_BOOT_PATH="$CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/work/${KERNEL_CPU_TYPE}${PRODUCT}-poky-linux/imx-boot/*/git"
         IMX_BOOT_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_imx-boot
@@ -450,11 +507,15 @@ else #"$PRODUCT" != "$VER_PREFIX"
         prepare_images misc $MISC_DIR
         copy_image_to_storage misc
 
-        echo "[ADV] create module"
+        echo "[ADV] create module files"
         DEPLOY_MODULES_PATH="$CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/deploy/images/${KERNEL_CPU_TYPE}${PRODUCT}"
         MODULES_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_modules
         prepare_images modules $MODULES_DIR
         copy_image_to_storage modules
+
+        echo "[ADV] generate ota packages"
+        generate_OTA_update_package
+        copy_image_to_storage ota
 
         save_temp_log
 fi
