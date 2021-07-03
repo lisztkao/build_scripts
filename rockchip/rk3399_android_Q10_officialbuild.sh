@@ -6,7 +6,7 @@ kernel \
 . \
 "
 
-VER_PREFIX="RK3399_N7_"
+VER_PREFIX="RK3399_Q10_"
 
 idx=0
 isFirstMachine="true"
@@ -52,8 +52,8 @@ done
 #--------------------------------------------------
 #======================
 AND_BSP="android"
-AND_BSP_VER="7.1"
-AND_VERSION="android_N7.1.2"
+AND_BSP_VER="10.0"
+AND_VERSION="android_Q10.0"
 
 #======================
 
@@ -185,7 +185,7 @@ function generate_csv()
 
     cat > ${FILENAME%.*}.csv << END_OF_CSV
 ESSD Software/OS Update News
-OS, Android 7.1.2
+OS, Android 10.0 
 Part Number, N/A
 Author,
 Date, ${DATE}
@@ -286,8 +286,7 @@ function building()
         cd $CURR_PATH/$ROOT_DIR/$SUB_DIR/u-boot
         make clean
         echo " V$RELEASE_VERSION" > .scmversion
-        make $UBOOT_DEFCONFIG >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_UBOOT
-        make ARCHV=aarch64 >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_UBOOT
+        bash make.sh $UBOOT_DEFCONFIG >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_UBOOT
 	elif [ "$1" == "kernel" ]; then
         echo "[ADV] build kernel KERNEL_DEFCONFIG = $KERNEL_DEFCONFIG KERNEL_DTB=$KERNEL_DTB"
         cd $CURR_PATH/$ROOT_DIR/$SUB_DIR/kernel
@@ -354,6 +353,11 @@ function prepare_images()
     IMAGE_DIR="${VER_TAG}"_"$NEW_MACHINE"_"$DATE"
     echo "[ADV] mkdir $IMAGE_DIR"
     mkdir $IMAGE_DIR
+
+    cp -aRL $CURR_PATH/$ROOT_DIR/$SUB_DIR/RKTools/windows/AndroidTool/* $IMAGE_DIR/
+
+    cp -aRL $CURR_PATH/$ROOT_DIR/$SUB_DIR/RKTools/windows/DriverAssitant_*.zip $IMAGE_DIR/
+
     mkdir -p $IMAGE_DIR/rockdev/image
 
     # Copy image files to image directory

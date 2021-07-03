@@ -111,14 +111,19 @@ function copy_folder()
 function create_ubuntu_image()
 {
     case ${AIM_VERSION} in
-    AIM20) SDCARD_SIZE=3700;;
-    AIM30) SDCARD_SIZE=6500;;
-    *) echo "cannot read AIM version from \"$AIM_VERSION\""; exit 1 ;;
+        AIM20)
+            IMAGE_SIZE=3700
+            YOCTO_IMAGE="*-image-*${CPU_TYPE_Module}${NEW_MACHINE}*.sdcard"
+            ;;
+        AIM30)
+            IMAGE_SIZE=6500
+            YOCTO_IMAGE="*-image-*${CPU_TYPE_Module}${NEW_MACHINE}*.wic"
+            ;;
+        *)
+            echo "cannot read AIM version from \"$AIM_VERSION\""; exit 1 ;;
     esac
 
-    YOCTO_IMAGE_SDCARD="*-image-*${CPU_TYPE_Module}${NEW_MACHINE}*.sdcard"
-    YOCTO_IMAGE_TGZ="${PRODUCT}${VERSION_TAG}_${CPU_TYPE}_flash_tool.tgz"
-    UBUNTU_IMAGE="${UBUNTU_PRODUCT}${VERSION_TAG}_${CPU_TYPE}_${DATE}.img"
+    YOCTO_IMAGE_TGZ="${PRODUCT}${VERSION_TAG}_${CPU_TYPE}*flash_tool.tgz"
 
     pftp -v -n ${FTP_SITE} << EOF
 user "ftpuser" "P@ssw0rd"
@@ -130,27 +135,44 @@ mget ${YOCTO_IMAGE_TGZ}
 close
 quit
 EOF
-    #  Yocto image
-    tar zxf ${YOCTO_IMAGE_TGZ}
-    mv ${YOCTO_IMAGE_TGZ/.tgz}/image/*.sdcard .
 
-    # Maybe the loop device is occuppied, unmount it first
-    sudo umount $MOUNT_POINT
-    sudo losetup -d $LOOP_DEV
+    FILE_LIST=`ls $YOCTO_IMAGE_TGZ`
+    for FILE in $FILE_LIST
+    do
+		UBUNTU_IMAGE=${FILE/$PRODUCT/$UBUNTU_PRODUCT}		#replace 5721A1AIM20LI to 5721A1AIM20UI
+		UBUNTU_IMAGE=${UBUNTU_IMAGE/flash_tool.tgz/$DATE.img}	#replace flash_tool.tgz to 2021-03-22.img
+		#Here we get 5721A1AIM20UIV90214_iMX8MM_2G_2021-03-22.img
+		
+		#  Yocto image
+		tar zxf ${FILE}
+		case ${AIM_VERSION} in
+		AIM20)
+		    mv ${FILE/.tgz}/image/*.sdcard .
+		    ;;
+		AIM30)
+		    mv ${FILE/.tgz}/image/*.wic .
+		    ;;
+		*)
+		    echo "cannot read AIM version from \"$AIM_VERSION\""; exit 1 ;;
+		esac
 
-    echo "[ADV] rename yocto image file to ubuntu image file"
-    sudo mv ${YOCTO_IMAGE_SDCARD} ${UBUNTU_IMAGE}
+		# Maybe the loop device is occuppied, unmount it first
+		sudo umount $MOUNT_POINT
+		sudo losetup -d $LOOP_DEV
 
-    # resize
-    sudo mv ${UBUNTU_IMAGE} ${UBUNTU_IMAGE/.img}.sdcard
-    sudo dd if=/dev/zero of=${UBUNTU_IMAGE} bs=1M count=$SDCARD_SIZE
-    sudo losetup ${LOOP_DEV} ${UBUNTU_IMAGE}
-    echo "[ADV] resize ${UBUNTU_IMAGE} to ${SDCARD_SIZE}MB"
-    sudo dd if=${UBUNTU_IMAGE/.img}.sdcard of=$LOOP_DEV
-    sudo sync
+		echo "[ADV] rename yocto image file to ubuntu image file"
+		sudo mv ${YOCTO_IMAGE} ${UBUNTU_IMAGE}
 
-    rootfs_start=`sudo fdisk -u -l ${LOOP_DEV} | grep ${LOOP_DEV}p2 | awk '{print $2}'`
-    sudo fdisk -u $LOOP_DEV << EOF
+		# resize
+		sudo mv ${UBUNTU_IMAGE} ${UBUNTU_IMAGE/.img}.sdcard
+		sudo dd if=/dev/zero of=${UBUNTU_IMAGE} bs=1M count=$IMAGE_SIZE
+		sudo losetup ${LOOP_DEV} ${UBUNTU_IMAGE}
+		echo "[ADV] resize ${UBUNTU_IMAGE} to ${IMAGE_SIZE}MB"
+		sudo dd if=${UBUNTU_IMAGE/.img}.sdcard of=$LOOP_DEV
+		sudo sync
+
+		rootfs_start=`sudo fdisk -u -l ${LOOP_DEV} | grep ${LOOP_DEV}p2 | awk '{print $2}'`
+		sudo fdisk -u $LOOP_DEV << EOF
 d
 2
 n
@@ -161,53 +183,54 @@ $rootfs_start
 Y
 w
 EOF
-    sudo sync
-    sudo partprobe ${LOOP_DEV}
-    sudo e2fsck -f -y ${LOOP_DEV}p2
-    sudo resize2fs ${LOOP_DEV}p2
+		sudo sync
+		sudo partprobe ${LOOP_DEV}
+		sudo e2fsck -f -y ${LOOP_DEV}p2
+		sudo resize2fs ${LOOP_DEV}p2
 
-    # Update Ubuntu rootfs
-    echo "[ADV] update rootfs"
-    sudo mount ${LOOP_DEV}p2 $MOUNT_POINT/
-    sudo mv $MOUNT_POINT/etc/modprobe.d $MOUNT_POINT/.modprobe.d
-    sudo mv $MOUNT_POINT/etc/modules-load.d $MOUNT_POINT/.modules-load.d
-    sudo mv $MOUNT_POINT/etc/udev $MOUNT_POINT/.udev
-    sudo mv $MOUNT_POINT/lib/modules $MOUNT_POINT/.modules
-    sudo mv $MOUNT_POINT/lib/firmware $MOUNT_POINT/.firmware
-    sudo rm -rf $MOUNT_POINT/*
-    sudo tar zxf ${UBUNTU_ROOTFS} -C $MOUNT_POINT/
-    copy_folder .modprobe.d etc/modprobe.d
-    copy_folder .modules-load.d etc/modules-load.d
-    copy_folder .udev etc/udev
-    copy_folder .modules lib/modules
-    copy_folder .firmware lib/firmware
+		# Update Ubuntu rootfs
+		echo "[ADV] update rootfs"
+		sudo mount ${LOOP_DEV}p2 $MOUNT_POINT/
+		sudo mv $MOUNT_POINT/etc/modprobe.d $MOUNT_POINT/.modprobe.d
+		sudo mv $MOUNT_POINT/etc/modules-load.d $MOUNT_POINT/.modules-load.d
+		sudo mv $MOUNT_POINT/etc/udev $MOUNT_POINT/.udev
+		sudo mv $MOUNT_POINT/lib/modules $MOUNT_POINT/.modules
+		sudo mv $MOUNT_POINT/lib/firmware $MOUNT_POINT/.firmware
+		sudo rm -rf $MOUNT_POINT/*
+		sudo tar zxf ${UBUNTU_ROOTFS} -C $MOUNT_POINT/
+		copy_folder .modprobe.d etc/modprobe.d
+		copy_folder .modules-load.d etc/modules-load.d
+		copy_folder .udev etc/udev
+		copy_folder .modules lib/modules
+		copy_folder .firmware lib/firmware
 
-    sudo sh -c "echo ${CPU_TYPE_Module}${NEW_MACHINE} > $MOUNT_POINT/etc/hostname"
-    sudo sed -i "s/\(127\.0\.1\.1 *\).*/\1${CPU_TYPE_Module}${NEW_MACHINE}/" $MOUNT_POINT/etc/hosts
-    sudo umount $MOUNT_POINT
-    sudo losetup -d ${LOOP_DEV}
-    sudo rm ${UBUNTU_IMAGE/.img}.sdcard
+		sudo sh -c "echo ${CPU_TYPE_Module}${NEW_MACHINE} > $MOUNT_POINT/etc/hostname"
+		sudo sed -i "s/\(127\.0\.1\.1 *\).*/\1${CPU_TYPE_Module}${NEW_MACHINE}/" $MOUNT_POINT/etc/hosts
+		sudo umount $MOUNT_POINT
+		sudo losetup -d ${LOOP_DEV}
+		sudo rm ${UBUNTU_IMAGE/.img}.sdcard
 
-    # generate flash_tool
-    echo "[ADV] generate flash tool"
-    FLASH_DIR=${UBUNTU_PRODUCT}${VERSION_TAG}_${CPU_TYPE}_flash_tool
-    sudo mkdir -p $FLASH_DIR/image
-    sudo cp ${UBUNTU_IMAGE} $FLASH_DIR/image/${UBUNTU_IMAGE/.img}.sdcard
-    sudo chown -R 0.0 $FLASH_DIR/image
-    generate_mksd_linux $FLASH_DIR
+		# generate flash_tool
+		echo "[ADV] generate flash tool"
+			FLASH_DIR=${UBUNTU_IMAGE/$DATE.img/flash_tool}
+		sudo mkdir -p $FLASH_DIR/image
+		sudo cp ${UBUNTU_IMAGE} $FLASH_DIR/image/${UBUNTU_IMAGE/.img}.sdcard
+		sudo chown -R 0.0 $FLASH_DIR/image
+		generate_mksd_linux $FLASH_DIR
 
-    tar czf ${FLASH_DIR}.tgz $FLASH_DIR
-    generate_md5 ${FLASH_DIR}.tgz
-    sudo mv ${FLASH_DIR}.tgz* $STORAGE_PATH
+		tar czf ${FLASH_DIR}.tgz $FLASH_DIR
+		generate_md5 ${FLASH_DIR}.tgz
+		sudo mv ${FLASH_DIR}.tgz* $STORAGE_PATH
 
-    # output file
-    echo "[ADV] output files"
-    gzip -c9 ${UBUNTU_IMAGE} > ${UBUNTU_IMAGE}.gz
-    generate_md5 ${UBUNTU_IMAGE}.gz
-    generate_csv ${UBUNTU_IMAGE}.gz
-    sudo mv ${UBUNTU_IMAGE}.csv $STORAGE_PATH
-    sudo mv ${UBUNTU_IMAGE}.gz $STORAGE_PATH
-    sudo mv ${UBUNTU_IMAGE}.gz.md5 $STORAGE_PATH
+		# output file
+		echo "[ADV] output files"
+		gzip -c9 ${UBUNTU_IMAGE} > ${UBUNTU_IMAGE}.gz
+		generate_md5 ${UBUNTU_IMAGE}.gz
+		generate_csv ${UBUNTU_IMAGE}.gz
+		sudo mv ${UBUNTU_IMAGE}.csv $STORAGE_PATH
+		sudo mv ${UBUNTU_IMAGE}.gz $STORAGE_PATH
+		sudo mv ${UBUNTU_IMAGE}.gz.md5 $STORAGE_PATH
+	done
 }
 
 # === [Main] List Official Build Version ============================================================
@@ -217,6 +240,7 @@ TOTAL_LIST=" \
     ROM5620A1_8X \
     ROM3620A1_8X \
     ROM5721A1_8MM \
+    ROM5722A1_8MP \
     RSB3720A1_8MP
 "
 MACHINE_LIST=""
@@ -255,6 +279,7 @@ do
     rom5620a1) PROD="5620A1" ;;
     rom3620a1) PROD="3620A1" ;;
     rom5721a1) PROD="5721A1" ;;
+    rom5722a1) PROD="5722A1" ;;
     rsb3720a1) PROD="3720A1" ;;
     *) echo "cannot handle \"$NEW_MACHINE\""; exit 1 ;;
     esac

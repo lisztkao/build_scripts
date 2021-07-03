@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PLATFORM_PREFIX="RK3399_RISC_"
+PLATFORM_PREFIX="RK3288"
 VER_PREFIX="DIV"
 
 
@@ -41,8 +41,8 @@ REALEASE_NOTE="Release_Note"
 #--------------------------------------------------
 #======================
 AND_BSP="debian"
-AND_BSP_VER="9.x"
-AND_VERSION="debian_V9.x"
+AND_BSP_VER="10.x"
+AND_VERSION="debian_V10.x"
 
 #======================
 
@@ -60,25 +60,23 @@ fi
 
 function auto_add_tag()
 {
-    echo "[ADV] auto_add_tag"
     cd $CURR_PATH/$ROOT_DIR/kernel
     HEAD_HASH_ID=`git rev-parse HEAD`
     TAG_HASH_ID=`git tag -v $VER_TAG | grep object | cut -d ' ' -f 2`
-    REMOTE_SERVER=`git remote -v | grep push | cut -d $'\t' -f 1`
+	REMOTE_SERVER=`git remote -v | grep push | cut -d $'\t' -f 1`
     if [ "$HEAD_HASH_ID" == "$TAG_HASH_ID" ]; then
         echo "[ADV] tag exists! There is no need to add tag"
     else
         echo "[ADV] Add tag $VER_TAG"
-        cd $CURR_PATH/$ROOT_DIR
-	../repo/repo forall -c git tag -a $VER_TAG -m "[Official Release] $VER_TAG"
-	../repo/repo forall -c git push $REMOTE_SERVER $VER_TAG
+	cd $CURR_PATH/$ROOT_DIR/
+        ../repo/repo forall -c git tag -a $VER_TAG -m "[Official Release] $VER_TAG"
+        ../repo/repo forall -c git push $REMOTE_SERVER $VER_TAG
     fi
     cd $CURR_PATH
 }
 
 function create_xml_and_commit()
 {
-    echo "[ADV] create_xml_and_commit"
     cd $CURR_PATH
     if [ -d "$ROOT_DIR/.repo/manifests" ];then
         echo "[ADV] Create XML file"
@@ -87,7 +85,7 @@ function create_xml_and_commit()
         ../repo/repo manifest -o $VER_TAG.xml -r
         mv $VER_TAG.xml .repo/manifests
         cd .repo/manifests
-		git checkout $BSP_BRANCH
+	git checkout $BSP_BRANCH
 
         # push to github
         REMOTE_SERVER=`git remote -v | grep push | cut -d $'\t' -f 1`
@@ -105,7 +103,6 @@ function create_xml_and_commit()
 
 function uboot_version_commit()
 {
-    echo "[ADV] uboot_version_commit"
     cd $CURR_PATH
 	cd $ROOT_DIR/u-boot
 
@@ -149,8 +146,7 @@ function generate_csv()
     HASH_DEBIAN_EXTERNAL=$(cd $CURR_PATH/$ROOT_DIR/external && git rev-parse --short HEAD)
     HASH_DEBIAN_PREBUILTS=$(cd $CURR_PATH/$ROOT_DIR/prebuilts && git rev-parse --short HEAD)
     HASH_DEBIAN_RKBIN=$(cd $CURR_PATH/$ROOT_DIR/rkbin && git rev-parse --short HEAD)
-    HASH_DEBIAN_ROOTFS=$(cd $CURR_PATH/$ROOT_DIR/debian && git rev-parse --short HEAD)
-    HASH_DEBIAN_ROOTFS_ADV=$(cd $CURR_PATH/$ROOT_DIR/rootfs_adv && git rev-parse --short HEAD)
+    HASH_DEBIAN_ROOTFS=$(cd $CURR_PATH/$ROOT_DIR/rootfs && git rev-parse --short HEAD)
     HASH_DEBIAN_TOOLS=$(cd $CURR_PATH/$ROOT_DIR/tools && git rev-parse --short HEAD)
 
     cd $CURR_PATH
@@ -182,7 +178,6 @@ DEBIAN_EXTERNAL, ${HASH_DEBIAN_EXTERNAL}
 DEBIAN_PREBUILTS, ${HASH_DEBIAN_PREBUILTS}
 DEBIAN_RKBIN, ${HASH_DEBIAN_RKBIN}
 DEBIAN_ROOTFS, ${HASH_DEBIAN_ROOTFS}
-DEBIAN_ROOTFS_ADV, ${HASH_DEBIAN_ROOTFS_ADV}
 DEBIAN_TOOLS, ${HASH_DEBIAN_TOOLS}
 
 
@@ -221,7 +216,7 @@ function save_temp_log()
 
 function get_source_code()
 {
-    echo "[ADV] get rk3399 debian9 source code"
+    echo "[ADV] get rk3288 debian10 source code"
     cd $CURR_PATH
 
     git clone https://github.com/rockchip-linux/repo.git
@@ -261,39 +256,33 @@ function building()
 		cd $CURR_PATH/$ROOT_DIR/u-boot
 		make clean
 		echo " V$RELEASE_VERSION" > .scmversion
-		./make.sh $UBOOT_DEFCONFIG >&1 | tee $CURR_PATH/$ROOT_DIR/$LOG_FILE_UBOOT
+		./make.sh $UBOOT_DEFCONFIG >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_UBOOT
 	elif [ "$1" == "kernel" ]; then
 		echo "[ADV] build kernel KERNEL_DEFCONFIG = $KERNEL_DEFCONFIG KERNEL_DTB=$KERNEL_DTB"
 		cd $CURR_PATH/$ROOT_DIR/kernel
 
-		echo "[ADV] build kernel make ARCH=arm64 $KERNEL_DEFCONFIG"
+		echo "[ADV] build kernel make ARCH=arm $KERNEL_DEFCONFIG"
 		make clean
-		make ARCH=arm64 $KERNEL_DEFCONFIG >&1 | tee $CURR_PATH/$ROOT_DIR/$LOG_FILE_KERNEL
-		echo "[ADV] build kernel make ARCH=arm64 $KERNEL_DTB -j12"
-		make ARCH=arm64 $KERNEL_DTB -j12 >&1 | tee -a $CURR_PATH/$ROOT_DIR/$LOG_FILE_KERNEL
+		make ARCH=arm $KERNEL_DEFCONFIG >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_KERNEL
+		echo "[ADV] build kernel make ARCH=arm $KERNEL_DTB -j12"
+		make ARCH=arm $KERNEL_DTB -j12 >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_KERNEL
     elif [ "$1" == "recovery" ]; then
 		sudo apt-get update
 		sudo apt-get install -y expect-dev
 		echo "[ADV] build recovery"
 		cd $CURR_PATH/$ROOT_DIR
-		if [  -d "buildroot/output/rockchip_rk3399_recovery" ];then
-		    rm buildroot/output/rockchip_rk3399_recovery -rf
+		if [  -d "buildroot/output/rockchip_rk3288_recovery" ];then
+		    rm buildroot/output/rockchip_rk3288_recovery -rf
 		fi
-		source envsetup.sh rockchip_rk3399_recovery
-		./build.sh recovery >&1 | tee $CURR_PATH/$ROOT_DIR/$LOG_FILE_RECOVERY
+		source envsetup.sh rockchip_rk3288_recovery
+		./build.sh recovery >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_RECOVERY
     elif [ "$1" == "rootfs" ]; then
 		echo "[ADV] build rootfs"
-		sudo apt-get update
-		sudo apt-get install -y binfmt-support
-		sudo apt-get install -y qemu-user-static
-		sudo apt-get -y update
-		sudo apt-get install -y live-build
-
-		cd $CURR_PATH/$ROOT_DIR/debian
+		cd $CURR_PATH/$ROOT_DIR/rootfs
 		sudo dpkg -i ubuntu-build-service/packages/*
 		sudo apt-get install -f 
 		cd $CURR_PATH/$ROOT_DIR/
-		sudo BUILD_IN_DOCKER=TRUE ./mk-debian.sh >&1 | tee $CURR_PATH/$ROOT_DIR/$LOG_FILE_ROOTFS
+		sudo BUILD_IN_DOCKER=TRUE ./mk-debian.sh >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_ROOTFS
 
 	else
         echo "[ADV] pass building..."
@@ -317,7 +306,7 @@ function build_linux_images()
     # package image to rockdev folder
 	cd $CURR_PATH/$ROOT_DIR
 	echo "[ADV] build link images to rockdev"
-	source envsetup.sh rockchip_rk3399_recovery
+	source envsetup.sh rockchip_rk3288_recovery
 	./mkfirmware.sh
 	echo "[ADV] build linux images end"
 }
@@ -329,18 +318,14 @@ function prepare_images()
     IMAGE_DIR="${OFFICIAL_VER}"_"$DATE"
     echo "[ADV] mkdir $IMAGE_DIR"
     mkdir $IMAGE_DIR
-
-    if [ -d $CURR_PATH/$ROOT_DIR/tools/windows/RKDevTool ];then
-        cp -aRL $CURR_PATH/$ROOT_DIR/tools/windows/RKDevTool/* $IMAGE_DIR/
-    else
-        cp -aRL $CURR_PATH/$ROOT_DIR/tools/windows/AndroidTool/* $IMAGE_DIR/
-    fi
+    cp -aRL $CURR_PATH/$ROOT_DIR/tools/windows/RKDevTool/* $IMAGE_DIR/
 
     cp -aRL $CURR_PATH/$ROOT_DIR/tools/windows/DriverAssitant_*.zip $IMAGE_DIR/
 
     mkdir -p $IMAGE_DIR/rockdev/image
 
     # Copy image files to image directory
+
     cp -aRL $CURR_PATH/$ROOT_DIR/rockdev/* $IMAGE_DIR/rockdev/image
     echo "[ADV] creating ${IMAGE_DIR}.tgz ..."
     tar czf ${IMAGE_DIR}.img.tgz $IMAGE_DIR

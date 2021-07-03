@@ -75,8 +75,8 @@ fi
 # ===========
 function get_source_code()
 {
-    echo "[ADV] get android source codeeee"
-	git clone https://github.com/rockchip-linux/repo.git
+    echo "[ADV] get android source code"
+    git clone https://github.com/rockchip-linux/repo.git
     mkdir $ROOT_DIR
     cd $ROOT_DIR
 
