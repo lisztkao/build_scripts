@@ -2,12 +2,12 @@
 
 PRODUCT=$1
 OFFICIAL_VER=$2
-MEMORY_LIST=$3
-BOOT_DEVICE_LIST=$4
+MEMORY_TYPE=$3
 
 #--- [platform specific] ---
-VER_PREFIX="imx8"
+VER_PREFIX="imx6"
 TMP_DIR="tmp"
+DEFAULT_DEVICE="imx6qrsb4411a1"
 #---------------------------
 echo "[ADV] DATE = ${DATE}"
 echo "[ADV] STORED = ${STORED}"
@@ -18,8 +18,8 @@ echo "[ADV] DEPLOY_IMAGE_NAME = ${DEPLOY_IMAGE_NAME}"
 echo "[ADV] BACKEND_TYPE = ${BACKEND_TYPE}"
 echo "[ADV] VERSION = ${VERSION}"
 echo "[ADV] BUILD_NUMBER = ${BUILD_NUMBER}"
-echo "[ADV] MEMORY_LIST=${MEMORY_LIST}"
-echo "[ADV] BOOT_DEVICE_LIST=${BOOT_DEVICE_LIST}"
+echo "[ADV] MEMORY_TYPE=$MEMORY_TYPE"
+
 echo "[ADV] U_BOOT_VERSION = ${U_BOOT_VERSION}"
 echo "[ADV] U_BOOT_URL = ${U_BOOT_URL}"
 echo "[ADV] U_BOOT_BRANCH = ${U_BOOT_BRANCH}"
@@ -37,6 +37,9 @@ CURR_PATH="$PWD"
 ROOT_DIR="${VER_TAG}"_"$DATE"
 STORAGE_PATH="$CURR_PATH/$STORED/$DATE"
 
+MEMORY_COUT=1
+MEMORY=`echo $MEMORY_TYPE | cut -d '-' -f $MEMORY_COUT`
+PRE_MEMORY=""
 
 echo "$Release_Note" > Release_Note
 REALEASE_NOTE="Release_Note"
@@ -66,33 +69,22 @@ function define_cpu_type()
 {
         CPU_TYPE=`expr $1 : '.*-\(.*\)$'`
         case $CPU_TYPE in
-                "8X")
+                "solo")
                         PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8qxp"
-                        CPU_TYPE="iMX8X"
+                        UBOOT_CPU_TYPE="mx6dl"
+                        KERNEL_CPU_TYPE="imx6dl"
+                        CPU_TYPE="DualLiteSolo"
                         ;;
-                "8M")
+                "plus")
                         PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8mq"
-                        CPU_TYPE="iMX8M"
-                        ;;
-                "8MM")
-                        PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8mm"
-                        CPU_TYPE="iMX8MM"
-                        ;;
-                "8MP")
-                        PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8mp"
-                        CPU_TYPE="iMX8MP"
-                        ;;
-                "8QM")
-                        PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8qm"
-                        CPU_TYPE="iMX8QM"
+                        UBOOT_CPU_TYPE="mx6qp"
+                        KERNEL_CPU_TYPE="imx6qp"
+                        CPU_TYPE="DualQuadPlus"
                         ;;
                 *)
-                        # Do nothing
+                        UBOOT_CPU_TYPE="mx6q"
+                        KERNEL_CPU_TYPE="imx6q"
+                        CPU_TYPE="DualQuad"
                         ;;
         esac
 }
@@ -311,6 +303,124 @@ function save_temp_log()
 	find . -name "temp" | xargs rm -rf
 }
 
+# ===============================
+#  Functions [platform specific]
+# ===============================
+function building()
+{
+        echo "[ADV] building $1 $2..."
+        LOG_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$DATE"_log
+
+        if [ "$1" == "populate_sdk" ]; then
+                if [ "$DEPLOY_IMAGE_NAME" == "fsl-image-full" ]; then
+                        echo "[ADV] bitbake meta-toolchain"
+                        bitbake meta-toolchain
+                else
+                        echo "[ADV] bitbake $DEPLOY_IMAGE_NAME -c populate_sdk"
+                        bitbake $DEPLOY_IMAGE_NAME -c populate_sdk
+                fi
+        elif [ "x" != "x$2" ]; then
+                bitbake $1 -c $2 -f
+        else
+                bitbake $1
+        fi
+
+        if [ "$?" -ne 0 ]; then
+                echo "[ADV] Build failure! Check details in ${LOG_DIR}.tgz"
+                save_temp_log
+                exit 1
+        fi
+}
+
+function set_environment()
+{
+        cd $CURR_PATH/$ROOT_DIR
+	echo "[ADV] set environment"
+
+        if [ "$1" == "sdk" ]; then
+	        # Use default device for sdk
+                EULA=1 DISTRO=$BACKEND_TYPE MACHINE=$DEFAULT_DEVICE source imx-setup-release.sh -b $BUILDALL_DIR
+        else
+                if [ -e $BUILDALL_DIR/conf/local.conf ] ; then
+                        # Change MACHINE setting
+                        sed -i "s/MACHINE ??=.*/MACHINE ??= '${KERNEL_CPU_TYPE}${PRODUCT}'/g" $BUILDALL_DIR/conf/local.conf
+                        EULA=1 source setup-environment $BUILDALL_DIR
+                else
+                        # First build
+                        EULA=1 DISTRO=$BACKEND_TYPE MACHINE=${KERNEL_CPU_TYPE}${PRODUCT} source imx-setup-release.sh -b $BUILDALL_DIR
+                fi
+        fi
+}
+
+function build_yocto_sdk()
+{
+        set_environment sdk
+
+        # Build default full image first
+        ## building $DEPLOY_IMAGE_NAME
+
+        # Generate sdk image
+        building populate_sdk
+}
+
+function prepare_images()
+{
+        cd $CURR_PATH
+
+        IMAGE_TYPE=$1
+        OUTPUT_DIR=$2
+	echo "[ADV] prepare $IMAGE_TYPE image"
+        if [ "x$OUTPUT_DIR" == "x" ]; then
+                echo "[ADV] prepare_images: invalid parameter #2!"
+                exit 1;
+        else
+                echo "[ADV] mkdir $OUTPUT_DIR"
+                mkdir $OUTPUT_DIR
+        fi
+	
+        case $IMAGE_TYPE in
+                "sdk")
+			cp $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/deploy/sdk/* $OUTPUT_DIR
+                        ;;
+                *)
+                        echo "[ADV] prepare_images: invalid parameter #1!"
+                        exit 1;
+                        ;;
+        esac
+
+        # Package image file
+        case $IMAGE_TYPE in
+                "sdk")
+                        echo "[ADV] creating ${OUTPUT_DIR}.tgz ..."
+			tar czf ${OUTPUT_DIR}.tgz $OUTPUT_DIR
+			generate_md5 ${OUTPUT_DIR}.tgz
+                        ;;
+                *) # Normal, Eng images
+                        echo "[ADV] creating ${OUTPUT_DIR}.img.gz ..."
+                        gzip -c9 $OUTPUT_DIR/$FILE_NAME > $OUTPUT_DIR.img.gz
+                        generate_md5 $OUTPUT_DIR.img.gz
+                        ;;
+        esac
+        rm -rf $OUTPUT_DIR
+}
+
+function copy_image_to_storage()
+{
+	echo "[ADV] copy $1 images to $STORAGE_PATH"
+
+	case $1 in
+		"sdk")
+			mv -f ${SDK_DIR}.tgz $STORAGE_PATH
+			;;
+		*)
+			echo "[ADV] copy_image_to_storage: invalid parameter #1!"
+			exit 1;
+			;;
+	esac
+
+	mv -f *.md5 $STORAGE_PATH
+}
+
 function get_bsp_tarball()
 {
 	if [ -e $STORAGE_PATH/${ROOT_DIR}.tgz ] ; then
@@ -323,10 +433,9 @@ function get_bsp_tarball()
 
 function get_csv_info()
 {
-	IMAGE_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$1"_"$DATE"
+	IMAGE_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$DATE"
 	CSV_FILE="$STORAGE_PATH/${IMAGE_DIR}.img.csv"
 
-	echo "[ADV] Show HASH in ${CSV_FILE}"
 	if [ -e ${CSV_FILE} ] ; then
 		HASH_ADVANTECH=`cat ${CSV_FILE} | grep "meta-advantech" | cut -d ',' -f 2`
 		HASH_KERNEL=`cat ${CSV_FILE} | grep "linux-imx" | cut -d ',' -f 2`
@@ -350,6 +459,15 @@ if [ "$PRODUCT" == "$VER_PREFIX" ]; then
 	echo "[ADV] get bsp tarball"
 	get_bsp_tarball
 
+	# Build Yocto SDK
+	echo "[ADV] build yocto sdk"
+	build_yocto_sdk
+
+	echo "[ADV] generate sdk image"
+	SDK_DIR="$ROOT_DIR"_sdk
+	prepare_images sdk $SDK_DIR
+	copy_image_to_storage sdk
+
 	rm -rf $ROOT_DIR
 
 else # "$PRODUCT" != "$VER_PREFIX"
@@ -358,9 +476,8 @@ else # "$PRODUCT" != "$VER_PREFIX"
 
         if [ -z "$EXISTED_VERSION" ] ; then
 		# Get info from CSV
-		for MEMORY in $MEMORY_LIST;do
-			get_csv_info $MEMORY
-		done
+		get_csv_info
+
 		# Check meta-advantech tag exist or not, and checkout to tag version
 		check_tag_and_checkout $META_ADVANTECH_PATH $META_ADVANTECH_BRANCH $HASH_ADVANTECH
 

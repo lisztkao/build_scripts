@@ -78,6 +78,11 @@ function define_cpu_type()
                         KERNEL_CPU_TYPE="imx8mm"
                         CPU_TYPE="iMX8MM"
                         ;;
+		"8MP")
+                        PRODUCT=`expr $1 : '\(.*\).*-'`
+                        KERNEL_CPU_TYPE="imx8mp"
+                        CPU_TYPE="iMX8MP"
+                        ;;
                 "8QM")
                         PRODUCT=`expr $1 : '\(.*\).*-'`
                         KERNEL_CPU_TYPE="imx8qm"
@@ -179,7 +184,7 @@ function generate_csv()
     HASH_BSP=$(cd $CURR_PATH/$ROOT_DIR/.repo/manifests && git rev-parse HEAD)
     HASH_ADV=$(cd $CURR_PATH/$ROOT_DIR/$META_ADVANTECH_PATH && git rev-parse HEAD)
     HASH_KERNEL=$(cd $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/work/${KERNEL_CPU_TYPE}${PRODUCT}-poky-linux/linux-imx/$KERNEL_VERSION*/git && git rev-parse HEAD)
-    HASH_UBOOT=$(cd $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/work/${KERNEL_CPU_TYPE}${PRODUCT}-poky-linux/u-boot-imx/$U_BOOT_VERSION*/git && git rev-parse HEAD)
+    HASH_UBOOT=$(cd $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/work/${KERNEL_CPU_TYPE}${PRODUCT}-poky-linux/u-boot-imx/*$U_BOOT_VERSION*/git && git rev-parse HEAD)
     cd $CURR_PATH
 
     cat > ${FILENAME%.*}.csv << END_OF_CSV
@@ -220,7 +225,7 @@ function building()
         LOG_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$DATE"_log
 
         if [ "$1" == "populate_sdk" ]; then
-                if [ "$DEPLOY_IMAGE_NAME" == "fsl-image-validation-imx" ]; then
+                if [ "$DEPLOY_IMAGE_NAME" == "fsl-image-full" ]; then
                         echo "[ADV] bitbake meta-toolchain"
                         bitbake meta-toolchain
                 else
@@ -251,7 +256,7 @@ function set_environment()
 		EULA=1 source setup-environment $BUILDALL_DIR
 	else
 		# First build
-		EULA=1 DISTRO=$BACKEND_TYPE MACHINE=${KERNEL_CPU_TYPE}${PRODUCT} source fsl-setup-release.sh -b $BUILDALL_DIR
+		EULA=1 DISTRO=$BACKEND_TYPE MACHINE=${KERNEL_CPU_TYPE}${PRODUCT} source imx-setup-release.sh -b $BUILDALL_DIR
 	fi
 }
 
@@ -268,19 +273,26 @@ function clean_yocto_packages()
                 building ${PACKAGE} cleansstate
         done
 
-        if [ -z ${DEPLOY_IMAGE_NAME##*qt*} ] ; then
         echo "[ADV] build_yocto_image: clean for qt5"
         PACKAGE_LIST=" \
 		qtbase-native qtbase qtdeclarative qtxmlpatterns qtwayland qtmultimedia \
 		qt3d qtgraphicaleffects qt5nmapcarousedemo qt5everywheredemo quitbattery \
 		qtsmarthome qtsensors cinematicexperience qt5nmapper quitindicators qtlocation \
-		qtwebkit qtwebkit-examples qtwebengine chromium-ozone-wayland "
+		qtwebkit qtwebengine chromium-ozone-wayland "
         for PACKAGE in ${PACKAGE_LIST}
         do
                 building ${PACKAGE} cleansstate
         done
+
+	echo "[ADV] build_yocto_image: clean for other packages"
+	building spirv-tools cleansstate
+	building fmt cleansstate
+	building armnn	cleansstate
+	if [ "$PRODUCT" == "rom7720a1" ] || [ "$PRODUCT" == "rom5620a1" ] || [ "$PRODUCT" == "rom3620a1" ] || [ "$PRODUCT" == "rom5722a1" ] || [ "$PRODUCT" == "rsb3720a1" ]; then
+                building nn-imx cleansstate
         fi
 }
+
 function rebuild_bootloader()
 {
         #rebuild bootloader
@@ -290,11 +302,9 @@ function rebuild_bootloader()
 			echo "[ADV] Rebuild image for $BOOTLOADER_TYPE"
 			echo "UBOOT_CONFIG = \"$BOOTLOADER_TYPE\"" >> $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/conf/local.conf
 			building imx-atf cleansstate
-			building optee-os-imx cleansstate
-			building imx-boot cleansstate
-			building initramfs-debug-image clean
+			building optee-os cleansstate
+			building imx-boot clean
 			building $DEPLOY_IMAGE_NAME clean
-			building initramfs-debug-image 
 			building $DEPLOY_IMAGE_NAME 
 			;;
                 *)
@@ -322,10 +332,7 @@ function build_yocto_images()
         building linux-imx
 
         # Clean package to avoid build error
-        clean_yocto_packages
-
-        echo "[ADV] Build recovery image!"
-        building initramfs-debug-image
+	clean_yocto_packages
 
 	# Build full image
         building $DEPLOY_IMAGE_NAME
@@ -349,7 +356,7 @@ function prepare_images()
 	
         case $IMAGE_TYPE in
                 "misc")
-                        cp $DEPLOY_MISC_PATH/Image-adv-${KERNEL_CPU_TYPE}*.dtb $OUTPUT_DIR
+                        cp $DEPLOY_MISC_PATH/${KERNEL_CPU_TYPE}*.dtb $OUTPUT_DIR
                         cp $DEPLOY_MISC_PATH/Image $OUTPUT_DIR
                         cp $DEPLOY_MISC_PATH/imx-boot-imx8* $OUTPUT_DIR
                         cp $DEPLOY_MISC_PATH/tee.bin $OUTPUT_DIR
@@ -367,25 +374,25 @@ function prepare_images()
                         cp $DEPLOY_MODULES_PATH/$FILE_NAME $OUTPUT_DIR
                         ;;
                 "normal")
-                        FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.sdcard"
+                        FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.wic"
                         bunzip2 -f $DEPLOY_IMAGE_PATH/$FILE_NAME.bz2
                         cp $DEPLOY_IMAGE_PATH/$FILE_NAME $OUTPUT_DIR
                         ;;
-		"individually")
-			mkdir $OUTPUT_DIR/image $OUTPUT_DIR/mk_inand
-			sudo cp $CURR_PATH/individually-script-tool/* $OUTPUT_DIR/mk_inand/
-			sudo chmod 755 $OUTPUT_DIR/mk_inand/*
+                "individually")
+                        mkdir $OUTPUT_DIR/image $OUTPUT_DIR/mk_inand
+                        sudo cp $CURR_PATH/individually-script-tool/* $OUTPUT_DIR/mk_inand/
+                        sudo chmod 755 $OUTPUT_DIR/mk_inand/*
                         FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.tar.bz2"
                         cp $DEPLOY_IMAGE_PATH/$FILE_NAME 					$OUTPUT_DIR/image/rootfs.tar.bz2
-			cp $DEPLOY_IMAGE_PATH/adv-${KERNEL_CPU_TYPE}*dtb			$OUTPUT_DIR/image
-			cp $DEPLOY_IMAGE_PATH/Image						$OUTPUT_DIR/image
-                        cp $DEPLOY_IMAGE_PATH/imx-boot-"${KERNEL_CPU_TYPE}${PRODUCT}"-"$MEMORY".bin	$OUTPUT_DIR/image/flash.bin
-			cp $DEPLOY_IMAGE_PATH/"${KERNEL_CPU_TYPE}"*bin				$OUTPUT_DIR/image
-			;;
+                        cp $DEPLOY_IMAGE_PATH/${KERNEL_CPU_TYPE}*dtb				$OUTPUT_DIR/image
+                        cp $DEPLOY_IMAGE_PATH/Image						$OUTPUT_DIR/image
+                        cp $DEPLOY_IMAGE_PATH/imx-boot-"${KERNEL_CPU_TYPE}${PRODUCT}"-"$MEMORY".bin*	$OUTPUT_DIR/image/flash.bin
+                        cp $DEPLOY_IMAGE_PATH/"${KERNEL_CPU_TYPE}"*bin				$OUTPUT_DIR/image
+                        ;;
                 "flash")
                         mkdir $OUTPUT_DIR/image $OUTPUT_DIR/mk_inand
                         # normal image
-                        FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.sdcard"
+                        FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.wic"
                         cp $DEPLOY_IMAGE_PATH/$FILE_NAME $OUTPUT_DIR/image
                         chmod 755 $CURR_PATH/mksd-linux.sh
                         sudo cp $CURR_PATH/mksd-linux.sh $OUTPUT_DIR/mk_inand/
@@ -411,24 +418,6 @@ function prepare_images()
                         ;;
         esac
         rm -rf $OUTPUT_DIR
-}
-
-function generate_OTA_update_package()
-{
-        echo "[ADV] generate OTA update package"
-        cp ota-package.sh $DEPLOY_IMAGE_PATH
-        cd $DEPLOY_IMAGE_PATH
-
-        echo "[ADV] creating update_$1_kernel.zip for OTA package ..."
-        HW_VER=$((${#PRODUCT}-2))
-        DTB_FILE=`ls adv-${KERNEL_CPU_TYPE}-${PRODUCT:0:$HW_VER}-${PRODUCT:$HW_VER:2}.dtb`
-        ./ota-package.sh -k Image -d ${DTB_FILE} -m modules-${KERNEL_CPU_TYPE}${PRODUCT}.tgz -o update_$1_kernel
-
-        echo "[ADV] creating update_$1_rootfs.zip for OTA package ..."
-        ./ota-package.sh -r $DEPLOY_IMAGE_NAME-${KERNEL_CPU_TYPE}${PRODUCT}.ext4 -o update_$1_rootfs
-
-        mv update*.zip $CURR_PATH
-        cd $CURR_PATH
 }
 
 function copy_image_to_storage()
@@ -458,9 +447,6 @@ function copy_image_to_storage()
 			generate_csv $IMAGE_DIR.img.gz
 			mv ${IMAGE_DIR}.img.csv $STORAGE_PATH
 			mv -f $IMAGE_DIR.img.gz $STORAGE_PATH
-		;;
-		"ota")
-			mv -f update*.zip $STORAGE_PATH
 		;;
 		*)
 		echo "[ADV] copy_image_to_storage: invalid parameter #1!"
@@ -498,11 +484,14 @@ else #"$PRODUCT" != "$VER_PREFIX"
 	echo "[ADV] build images"
         build_yocto_images
 
+
+
 	for MEMORY in $MEMORY_LIST;do
                 if [ "$PRE_MEMORY" != "" ]; then
                         rebuild_bootloader $MEMORY
                 fi
-		PRE_MEMORY=$MEMORY
+                PRE_MEMORY=$MEMORY
+
 		echo "[ADV] generate normal image"
 		DEPLOY_IMAGE_PATH="$CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/deploy/images/${KERNEL_CPU_TYPE}${PRODUCT}"
 		IMAGE_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$MEMORY"_"$DATE"
@@ -526,7 +515,7 @@ else #"$PRODUCT" != "$VER_PREFIX"
 		copy_image_to_storage imx-boot
 
 		for BOOT_DEVICE in $BOOT_DEVICE_LIST; do
-			rebuild_bootloader $BOOT_DEVICE
+                        rebuild_bootloader $BOOT_DEVICE
 		done
 
 		echo "[ADV] create misc files"
@@ -538,15 +527,10 @@ else #"$PRODUCT" != "$VER_PREFIX"
         done
 
 	echo "[ADV] create module"
-        DEPLOY_MODULES_PATH="$CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/deploy/images/${KERNEL_CPU_TYPE}${PRODUCT}"
-        MODULES_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_modules
-        prepare_images modules $MODULES_DIR
-        copy_image_to_storage modules
-
-        echo "[ADV] generate ota packages"
-	OTA_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$DATE"
-        generate_OTA_update_package $OTA_DIR
-        copy_image_to_storage ota
+	DEPLOY_MODULES_PATH="$CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/deploy/images/${KERNEL_CPU_TYPE}${PRODUCT}"
+	MODULES_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_modules
+	prepare_images modules $MODULES_DIR
+	copy_image_to_storage modules
 
         save_temp_log
 fi

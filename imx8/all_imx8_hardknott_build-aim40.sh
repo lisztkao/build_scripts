@@ -1,13 +1,13 @@
 #!/bin/bash
 if [ "x${ALSO_BUILD_OFFICIAL_IMAGE}" != "x" ]; then
 	# Dailybuild
-	BUILD_SH="./imx8_sumo_dailybuild-aim20.sh"
+	BUILD_SH="./imx8_hardknott_dailybuild-aim40.sh"
 	VERSION_NUM=${RELEASE_VERSION}
 else
-	NUM1=`expr $VERSION : 'V\([0-9]*\)'`
+	NUM1=`expr $VERSION : 'V\([0-9A-Z]*\)'`
 	NUM2=`expr $VERSION : '.*[.]\([0-9A-Z]*\)'`
 	# Official release
-	BUILD_SH="./imx8_sumo_officialbuild-aim20.sh"
+	BUILD_SH="./imx8_hardknott_officialbuild-aim40.sh"
 	VERSION_NUM=$NUM1$NUM2
 fi
 
@@ -17,7 +17,7 @@ $BUILD_SH imx8 imx8LBV"$VERSION_NUM" 1G
 
 #imx8_projects
 if [ $ROM7720A1 == true ]; then
-	$BUILD_SH rom7720a1-8QM 7720A1"$AIM_VERSION"LIV"$VERSION_NUM" "4G 2G" "FSPI"
+	$BUILD_SH rom7720a1-8QM 7720A1"$AIM_VERSION"LIV"$VERSION_NUM" "4G" "FSPI"
 	[ "$?" -ne 0 ] && exit 1
 fi
 if [ $ROM5720A1 == true ]; then
@@ -29,12 +29,20 @@ if [ $ROM5721A1 == true ]; then
 	[ "$?" -ne 0 ] && exit 1
 fi
 if [ $ROM5620A1 == true ]; then
-	$BUILD_SH rom5620a1-8X 5620A1"$AIM_VERSION"LIV"$VERSION_NUM" "4G 2G" "FSPI"
+	$BUILD_SH rom5620a1-8X 5620A1"$AIM_VERSION"LIV"$VERSION_NUM" "2G" "FSPI"
 	[ "$?" -ne 0 ] && exit 1
 fi
 if [ $ROM3620A1 == true ]; then
 	$BUILD_SH rom3620a1-8X 3620A1"$AIM_VERSION"LIV"$VERSION_NUM" "2G" "FSPI"
+	[ "$?" -ne 0 ] && exit 1
+fi
+if [ $ROM5722A1 == true ]; then
+        $BUILD_SH rom5722a1-8MP 5722A1"$AIM_VERSION"LIV"$VERSION_NUM" "6G" "FSPI"
         [ "$?" -ne 0 ] && exit 1
+fi
+if [ $RSB3720A1 == true ]; then
+	$BUILD_SH rsb3720a1-8MP 3720A1"$AIM_VERSION"LIV"$VERSION_NUM" "6G 4G" "FSPI"
+	[ "$?" -ne 0 ] && exit 1
 fi
 
 echo "[ADV] All done!"
