@@ -15,6 +15,8 @@ ROOT_DIR="${VER_TAG}"_"$DATE"
 OUTPUT_DIR="$CURR_PATH/$STORED/$DATE"
 LINUX_TEGRA="Linux_for_Tegra"
 
+echo "CURR_PATH=$CURR_PATH"
+echo "ROOT_DIR=$ROOT_DIR"
 # ===========
 #  Functions
 # ===========
@@ -26,17 +28,16 @@ function get_source_code()
     #pushd $ROOT_DIR 2>&1 > /dev/null
     #repo init -u $BSP_URL
     #repo sync -j8
-	
+ls -al
 	KERNELDIR="kernel"
 	if [ -f $KERNELDIR ]; then
 echo "32"
 		pushd $KERNELDIR 2>&1 > /dev/null
-ls -al
 		touch version
 		echo $VERSION > version
 		popd
 	fi
-	popd
+	#popd
 	ls -al
 }
 
