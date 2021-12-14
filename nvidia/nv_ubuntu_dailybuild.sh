@@ -24,10 +24,11 @@ function get_source_code()
 {
     echo "[ADV] get nVidia source code"
 pwd	
-	#mkdir $ROOT_DIR
+	pushd $CURR_PATH
+	mkdir $ROOT_DIR
     pushd $ROOT_DIR 2>&1 > /dev/null
-    #repo init -u $BSP_URL
-    #repo sync -j8
+    repo init -u $BSP_URL
+    repo sync -j8
 pwd
 	KERNELDIR="kernel"
 	if [ -f $CURR_PATH/$ROOT_DIR/$KERNELDIR ]; then
@@ -38,7 +39,7 @@ echo "32"
 		popd
 	fi
 	popd
-	ls -al
+	popd
 }
 
 function build_image()
