@@ -22,14 +22,16 @@ function get_source_code()
 {
     echo "[ADV] get nVidia source code"
 	
-	mkdir $ROOT_DIR
-    pushd $ROOT_DIR 2>&1 > /dev/null
-    repo init -u $BSP_URL
-    repo sync -j8
+	#mkdir $ROOT_DIR
+    #pushd $ROOT_DIR 2>&1 > /dev/null
+    #repo init -u $BSP_URL
+    #repo sync -j8
 	
 	KERNELDIR="kernel"
 	if [ -f $KERNELDIR ]; then
+echo "32"
 		pushd $KERNELDIR 2>&1 > /dev/null
+ls -al
 		touch version
 		echo $VERSION > version
 		popd
@@ -40,10 +42,10 @@ function get_source_code()
 
 function build_image()
 {
-	pushd $ROOT_DIR 2>&1 > /dev/null
+	pushd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 	echo "[ADV] building Xavier-NX / TX2-NX ..."
 	ls -al
-	#source ./scripts/build_release.sh -s 186
+	source ./scripts/build_release.sh -s 186
 	#echo "[ADV] building Nano ..."
 	#source ./scripts/build_release.sh -s 210
 	popd
@@ -151,7 +153,7 @@ for NEW_MACHINE in $MACHINE_LIST
 do
 	echo "[ADV] NEW_MACHINE = $NEW_MACHINE"
 	get_source_code
-	#build_image
+	build_image
 	#prepare_images
 	#copy_image_to_storage
 	#save_temp_log
