@@ -23,12 +23,12 @@ echo "ROOT_DIR=$ROOT_DIR"
 function get_source_code()
 {
     echo "[ADV] get nVidia source code"
-	
+pwd	
 	#mkdir $ROOT_DIR
-    #pushd $ROOT_DIR 2>&1 > /dev/null
+    pushd $ROOT_DIR 2>&1 > /dev/null
     #repo init -u $BSP_URL
     #repo sync -j8
-ls -al
+pwd
 	KERNELDIR="kernel"
 	if [ -f $KERNELDIR ]; then
 echo "32"
@@ -37,7 +37,7 @@ echo "32"
 		echo $VERSION > version
 		popd
 	fi
-	#popd
+	popd
 	ls -al
 }
 
@@ -45,7 +45,7 @@ function build_image()
 {
 	pushd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 	echo "[ADV] building Xavier-NX / TX2-NX ..."
-	ls -al
+pwd
 	source ./scripts/build_release.sh -s 186
 	#echo "[ADV] building Nano ..."
 	#source ./scripts/build_release.sh -s 210
