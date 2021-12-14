@@ -23,15 +23,13 @@ echo "ROOT_DIR=$ROOT_DIR"
 function get_source_code()
 {
     echo "[ADV] get nVidia source code"
-pwd	
-	pushd $CURR_PATH
 	mkdir $ROOT_DIR
     pushd $ROOT_DIR 2>&1 > /dev/null
-    repo init -u $BSP_URL
-    repo sync -j8
-pwd
+    #repo init -u $BSP_URL
+    #repo sync -j8
+
 	KERNELDIR="kernel"
-	if [ -f $CURR_PATH/$ROOT_DIR/$KERNELDIR ]; then
+	if [ -d $CURR_PATH/$ROOT_DIR/$KERNELDIR ]; then
 echo "32"
 		pushd $CURR_PATH/$ROOT_DIR/$KERNELDIR 2>&1 > /dev/null
 		touch version
@@ -39,18 +37,16 @@ echo "32"
 		popd
 	fi
 	popd
-	popd
 }
 
 function build_image()
 {
-	pushd $CURR_PATH 2>&1 > /dev/null
+	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 	echo "[ADV] building Xavier-NX / TX2-NX ..."
 pwd
-	source ./$ROOT_DIR/scripts/build_release.sh -s 186
+	source ./scripts/build_release.sh -s 186 -d $CURR_PATH/$ROOT_DIR
 	#echo "[ADV] building Nano ..."
 	#source ./scripts/build_release.sh -s 210
-	popd
 }
 
 function generate_md5()
