@@ -35,13 +35,15 @@ function get_source_code()
 		popd
 	fi
 	popd
+	ls -al
 }
 
 function build_image()
 {
 	pushd $ROOT_DIR 2>&1 > /dev/null
 	echo "[ADV] building Xavier-NX / TX2-NX ..."
-	source ./scripts/build_release.sh -s 186
+	ls -al
+	#source ./scripts/build_release.sh -s 186
 	#echo "[ADV] building Nano ..."
 	#source ./scripts/build_release.sh -s 210
 	popd
@@ -149,10 +151,10 @@ for NEW_MACHINE in $MACHINE_LIST
 do
 	echo "[ADV] NEW_MACHINE = $NEW_MACHINE"
 	get_source_code
-	build_image
-	prepare_images
-	copy_image_to_storage
-	save_temp_log
+	#build_image
+	#prepare_images
+	#copy_image_to_storage
+	#save_temp_log
 done
 cd $CURR_PATH
 echo "[ADV] build script done!"
