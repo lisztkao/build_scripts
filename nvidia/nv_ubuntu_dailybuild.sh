@@ -30,9 +30,9 @@ pwd
     #repo sync -j8
 pwd
 	KERNELDIR="kernel"
-	if [ -f $KERNELDIR ]; then
+	if [ -f $CURR_PATH/$ROOT_DIR/$KERNELDIR ]; then
 echo "32"
-		pushd $KERNELDIR 2>&1 > /dev/null
+		pushd $CURR_PATH/$ROOT_DIR/$KERNELDIR 2>&1 > /dev/null
 		touch version
 		echo $VERSION > version
 		popd
@@ -43,10 +43,10 @@ echo "32"
 
 function build_image()
 {
-	pushd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
+	pushd $CURR_PATH 2>&1 > /dev/null
 	echo "[ADV] building Xavier-NX / TX2-NX ..."
 pwd
-	source ./scripts/build_release.sh -s 186
+	source ./$ROOT_DIR/scripts/build_release.sh -s 186
 	#echo "[ADV] building Nano ..."
 	#source ./scripts/build_release.sh -s 210
 	popd
