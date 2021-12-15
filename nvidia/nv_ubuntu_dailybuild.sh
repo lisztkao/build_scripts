@@ -25,12 +25,11 @@ function get_source_code()
     echo "[ADV] get nVidia source code"
 	mkdir $ROOT_DIR
     pushd $ROOT_DIR 2>&1 > /dev/null
-    #repo init -u $BSP_URL
-    #repo sync -j8
+    repo init -u $BSP_URL
+    repo sync -j8
 
 	KERNELDIR="kernel"
 	if [ -d $CURR_PATH/$ROOT_DIR/$KERNELDIR ]; then
-echo "32"
 		pushd $CURR_PATH/$ROOT_DIR/$KERNELDIR 2>&1 > /dev/null
 		touch version
 		echo $VERSION > version
@@ -43,7 +42,6 @@ function build_image()
 {
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 	echo "[ADV] building Xavier-NX / TX2-NX ..."
-pwd
 	sudo ./scripts/build_release.sh -s 186
 	#echo "[ADV] building Nano ..."
 	#source ./scripts/build_release.sh -s 210
@@ -111,7 +109,7 @@ function generate_csv()
     #HASH_BSP=$(cd $CURR_PATH/$ROOT_DIR/.repo/manifests && git rev-parse --short HEAD)
     HASH_KERNEL=$(cd kernel && git rev-parse --short HEAD)
     HASH_LINUX_FOR_TEGRA=$(cd Linux_for_Tegra && git rev-parse --short HEAD)
-
+	VERSION=`printf "%05d\n" $VERSION`
     cat > ${FILENAME}.csv << END_OF_CSV
 ESSD Software/OS Update News
 OS,Ubuntu 18.04
