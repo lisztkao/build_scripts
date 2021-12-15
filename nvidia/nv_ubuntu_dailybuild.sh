@@ -44,7 +44,7 @@ function build_image()
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 	echo "[ADV] building Xavier-NX / TX2-NX ..."
 pwd
-	source ./scripts/build_release.sh -s 186
+	sudo ./scripts/build_release.sh -s 186
 	#echo "[ADV] building Nano ..."
 	#source ./scripts/build_release.sh -s 210
 }
@@ -62,8 +62,8 @@ function generate_md5()
 function prepare_images()
 {
     echo "[ADV] creating ${VER_TAG}.tgz ..."
-	pushd $ROOT_DIR 2>&1 > /dev/null
-    tar czf ${VER_TAG}.tgz $LINUX_TEGRA
+	pushd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
+    sudo tar czf ${VER_TAG}.tgz $LINUX_TEGRA
     generate_md5 ${VER_TAG}.tgz
 	popd
 }
@@ -71,7 +71,7 @@ function prepare_images()
 function copy_image_to_storage()
 {
     echo "[ADV] copy images to $OUTPUT_DIR"
-	pushd $ROOT_DIR 2>&1 > /dev/null
+	pushd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
     generate_csv ${VER_TAG}.tgz
     mv ${VER_TAG}.tgz.csv $OUTPUT_DIR
     mv -f ${VER_TAG}.tgz $OUTPUT_DIR
@@ -83,9 +83,9 @@ function save_temp_log()
 {
 	LOG_DIR="log"
 	LOG_FILE="${VER_TAG}"_log	
-    pushd $ROOT_DIR 2>&1 > /dev/null
+    pushd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
     echo "[ADV] creating ${LOG_FILE}.tgz ..."
-    tar czf $LOG_FILE.tgz $LOG_DIR
+    sudo tar czf $LOG_FILE.tgz $LOG_DIR
     generate_md5 $LOG_FILE.tgz
     mv -f $LOG_FILE.tgz $OUTPUT_DIR
     mv -f $LOG_FILE.tgz.md5 $OUTPUT_DIR
@@ -106,7 +106,7 @@ function generate_csv()
         set - `ls -lh ${FILENAME}`; FILE_SIZE=$5
     fi
 	
-	pushd $ROOT_DIR 2>&1 > /dev/null
+	pushd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 
     #HASH_BSP=$(cd $CURR_PATH/$ROOT_DIR/.repo/manifests && git rev-parse --short HEAD)
     HASH_KERNEL=$(cd kernel && git rev-parse --short HEAD)
