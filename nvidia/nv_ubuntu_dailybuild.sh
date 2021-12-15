@@ -15,8 +15,6 @@ ROOT_DIR="${VER_TAG}"_"$DATE"
 OUTPUT_DIR="$CURR_PATH/$STORED/$DATE"
 LINUX_TEGRA="Linux_for_Tegra"
 
-echo "CURR_PATH=$CURR_PATH"
-echo "ROOT_DIR=$ROOT_DIR"
 # ===========
 #  Functions
 # ===========
@@ -43,8 +41,8 @@ function build_image()
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 	echo "[ADV] building Xavier-NX / TX2-NX ..."
 	sudo ./scripts/build_release.sh -s 186
-	#echo "[ADV] building Nano ..."
-	#source ./scripts/build_release.sh -s 210
+	echo "[ADV] building Nano ..."
+	sudo ./scripts/build_release.sh -s 210
 }
 
 function generate_md5()
@@ -116,7 +114,7 @@ OS,Ubuntu 18.04
 Part Number,N/A
 Author,
 Date,${DATE}
-Build Number,${VERSION}
+Build Number,"${VERSION}"
 TAG,
 Tested Platform,${NEW_MACHINE}
 MD5 Checksum,TGZ: ${MD5_SUM}
