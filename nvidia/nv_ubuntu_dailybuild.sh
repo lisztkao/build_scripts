@@ -44,7 +44,7 @@ function build_image()
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 	echo "[ADV] building Xavier-NX / TX2-NX ..."
 pwd
-	source ./scripts/build_release.sh -s 186 -d $CURR_PATH/$ROOT_DIR
+	source ./scripts/build_release.sh -s 186
 	#echo "[ADV] building Nano ..."
 	#source ./scripts/build_release.sh -s 210
 }
@@ -152,9 +152,9 @@ do
 	echo "[ADV] NEW_MACHINE = $NEW_MACHINE"
 	get_source_code
 	build_image
-	#prepare_images
-	#copy_image_to_storage
-	#save_temp_log
+	prepare_images
+	copy_image_to_storage
+	save_temp_log
 done
 cd $CURR_PATH
 echo "[ADV] build script done!"
