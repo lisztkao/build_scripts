@@ -33,7 +33,7 @@ function get_source_code()
 		echo $VERSION > version
 		popd
 	fi
-	check_tag_and_checkout
+	check_tag
 	popd
 }
 
@@ -254,7 +254,7 @@ function create_xml_and_commit()
 	fi
 }
 
-function check_tag_and_checkout()
+function check_tag()
 {
 	#-- Advantech/rk3399 gitlab android source code repository
 	echo "[ADV-ROOT]  $ROOT_DIR"
