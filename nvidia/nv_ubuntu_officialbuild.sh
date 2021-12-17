@@ -14,6 +14,8 @@ VER_TAG="${VER_PREFIX}_${PRODUCT}_${VERSION}"
 ROOT_DIR="${VER_TAG}"_"$DATE"
 OUTPUT_DIR="$CURR_PATH/$STORED/$DATE"
 LINUX_TEGRA="Linux_for_Tegra"
+echo "$Release_Note" > Release_Note
+REALEASE_NOTE="Release_Note"
 
 # ===========
 #  Functions
@@ -235,24 +237,17 @@ function create_xml_and_commit()
 		cp manifest.xml manifests/$VER_TAG.xml
 		cd manifests
 		git checkout $BSP_BRANCH
-echo "git checkout $BSP_BRANCH"
 		# add revision into xml
 		update_revision_for_xml $VER_TAG.xml
-echo "update_revision_for_xml $VER_TAG.xml"
+
 		# push to github
 		REMOTE_SERVER=`git remote -v | grep push | cut -d $'\t' -f 1`
 		git add $VER_TAG.xml
-echo "git add $VER_TAG.xml"
 		git commit -m "[Official Release] ${VER_TAG}"
-echo "git commit -m "[Official Release] ${VER_TAG}""
 		git push
-echo "git push"
 		git tag -a $VER_TAG -F $CURR_PATH/$REALEASE_NOTE
-echo "git tag -a $VER_TAG -F $CURR_PATH/$REALEASE_NOTE"
 		git push $REMOTE_SERVER $VER_TAG
-echo "git push $REMOTE_SERVER $VER_TAG"
 		cd $CURR_PATH
-echo "cd $CURR_PATH"
 	else
 		echo "[ADV] Directory $ROOT_DIR/.repo/manifests doesn't exist"
 		exit 1
