@@ -290,10 +290,10 @@ for NEW_MACHINE in $MACHINE_LIST
 do
 	echo "[ADV] NEW_MACHINE = $NEW_MACHINE"
 	get_source_code
-	#build_image
-	#prepare_images
-	#copy_image_to_storage
-	#save_temp_log
+	build_image
+	prepare_images
+	copy_image_to_storage
+	save_temp_log
 done
 cd $CURR_PATH
 echo "[ADV] build script done!"
