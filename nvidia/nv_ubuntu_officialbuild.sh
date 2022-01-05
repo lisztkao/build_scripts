@@ -2,6 +2,7 @@
 
 PRODUCT=$1
 VERSION=$2
+SOC=$3
 VER_PREFIX="nv"
 echo "[ADV] DATE = ${DATE}"
 echo "[ADV] STORED = ${STORED}"
@@ -9,8 +10,11 @@ echo "[ADV] BSP_URL = ${BSP_URL}"
 echo "[ADV] BSP_BRANCH = ${BSP_BRANCH}"
 echo "[ADV] BSP_XML = ${BSP_XML}"
 echo "[ADV] MACHINE_LIST= ${MACHINE_LIST}"
+echo "[ADV] PRODUCT=$PRODUCT"
+echo "[ADV] VERSION=$VERSION"
+echo "[ADV] SOC=$SOC"
 CURR_PATH="$PWD"
-VER_TAG="${VER_PREFIX}_${PRODUCT}_${VERSION}"
+VER_TAG="${VER_PREFIX}_${PRODUCT}_${SOC}_${VERSION}"
 ROOT_DIR="${VER_TAG}"_"$DATE"
 OUTPUT_DIR="$CURR_PATH/$STORED/$DATE"
 LINUX_TEGRA="Linux_for_Tegra"
@@ -27,25 +31,41 @@ function get_source_code()
 	pushd $ROOT_DIR 2>&1 > /dev/null
 	repo init -u $BSP_URL
 	repo sync -j8
-
-	KERNELDIR="kernel"
-	if [ -d $CURR_PATH/$ROOT_DIR/$KERNELDIR ]; then
-		pushd $CURR_PATH/$ROOT_DIR/$KERNELDIR 2>&1 > /dev/null
-		touch version
-		echo $VERSION > version
-		popd
-	fi
-	check_tag
 	popd
 }
 
 function build_image()
 {
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
-	echo "[ADV] building Xavier-NX / TX2-NX ..."
-	sudo ./scripts/build_release.sh -s 186
-	echo "[ADV] building Nano ..."
-	sudo ./scripts/build_release.sh -s 210
+	if [ "$PRODUCT" == "air020" ]; then
+		echo "[ADV] building Xavier-NX / TX2-NX ..."
+		sudo ./scripts/build_release.sh -s 186 -v ${VERSION}
+		echo "[ADV] building Nano ..."
+		sudo ./scripts/build_release.sh -s 210 -v ${VERSION}
+	elif [ "$PRODUCT" == "epcr7200" ]; then
+		echo "[ADV] building SOC:${SOC} ..."
+		sudo ./scripts/build_release.sh -s ${SOC} -v ${VERSION}
+	else
+		echo "[ADV] No such projet, exit!"
+		return 0
+	fi
+}
+
+function build_ota_image()
+{
+	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
+	if [ "$PRODUCT" == "air020" ]; then
+		echo "[ADV] building ota image ..."
+		sudo ./scripts/build_ota.sh -s 186 -v ${VERSION}
+		sudo ./scripts/build_ota.sh -s 194 -v ${VERSION}
+		sudo ./scripts/build_ota.sh -s 210 -v ${VERSION}
+	elif [ "$PRODUCT" == "epcr7200" ]; then
+		echo "[ADV] building ota image SOC:${SOC} ..."
+		sudo ./scripts/build_ota.sh -s ${SOC} -v ${VERSION}
+	else
+		echo "[ADV] No such projet, exit!"
+		return 0
+	fi
 }
 
 function generate_md5()
@@ -64,6 +84,8 @@ function prepare_images()
 	pushd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 	sudo tar czf ${VER_TAG}.tgz $LINUX_TEGRA
 	generate_md5 ${VER_TAG}.tgz
+	sudo tar czf ota_payload_${VER_TAG}.tgz -C ota/output .
+	generate_md5 ota_payload_${VER_TAG}.tgz
 	popd
 }
 
@@ -74,6 +96,7 @@ function copy_image_to_storage()
 	generate_csv ${VER_TAG}.tgz
 	mv ${VER_TAG}.tgz.csv $OUTPUT_DIR
 	mv -f ${VER_TAG}.tgz $OUTPUT_DIR
+	mv -f ota_payload_${VER_TAG}.tgz $OUTPUT_DIR
 	mv -f *.md5 $OUTPUT_DIR
 	popd
 }
