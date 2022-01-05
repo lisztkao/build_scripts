@@ -84,8 +84,8 @@ function prepare_images()
 	pushd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 	sudo tar czf ${VER_TAG}.tgz $LINUX_TEGRA
 	generate_md5 ${VER_TAG}.tgz
-	sudo tar czf ota_payload_${VER_TAG}.tgz -C ota/output .
-	generate_md5 ota_payload_${VER_TAG}.tgz
+	sudo tar czf ${VER_TAG}_ota_payload.tgz -C ota/output .
+	generate_md5 ${VER_TAG}_ota_payload.tgz
 	popd
 }
 
@@ -96,7 +96,7 @@ function copy_image_to_storage()
 	generate_csv ${VER_TAG}.tgz
 	mv ${VER_TAG}.tgz.csv $OUTPUT_DIR
 	mv -f ${VER_TAG}.tgz $OUTPUT_DIR
-	mv -f ota_payload_${VER_TAG}.tgz $OUTPUT_DIR
+	mv -f ${VER_TAG}_ota_payload.tgz $OUTPUT_DIR
 	mv -f *.md5 $OUTPUT_DIR
 	popd
 }
@@ -314,6 +314,7 @@ do
 	echo "[ADV] NEW_MACHINE = $NEW_MACHINE"
 	get_source_code
 	build_image
+	build_ota_image
 	prepare_images
 	copy_image_to_storage
 	save_temp_log
