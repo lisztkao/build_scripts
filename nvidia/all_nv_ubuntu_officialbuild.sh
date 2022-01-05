@@ -11,7 +11,7 @@ fi
 if [ "$epcr7200" == "true" ]; then
 	MACHINE_LIST="$MACHINE_LIST epcr7200"
 	export MACHINE_LIST
-	./nv_ubuntu_officialbuild.sh epcr7200 "${VERSION}"
+	./nv_ubuntu_officialbuild.sh epcr7200 "${VERSION}" "${SOC}"
 fi
 echo "[ADV] All done!"
 
