@@ -37,7 +37,7 @@ function build_image()
 		sudo ./scripts/build_release.sh -s 186 -v ${VERSION}
 		echo "[ADV] building Nano ..."
 		sudo ./scripts/build_release.sh -s 210 -v ${VERSION}
-	else if [ "$PRODUCT" == "epcr7200" ]; then
+	elif [ "$PRODUCT" == "epcr7200" ]; then
 		echo "[ADV] building SOC:${SOC} ..."
 		sudo ./scripts/build_release.sh -s ${SOC} -v ${VERSION}
 	else
