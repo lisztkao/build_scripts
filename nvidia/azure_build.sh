@@ -25,10 +25,15 @@ echo "air020:$air020"
 echo "sudo docker pull $DOCKER_IMAGE"
 
 docker pull $DOCKER_IMAGE
-docker run -di --name $CONTAINER_NAME -v $TOPDIR:/home/adv/BSP:rw --privileged $DOCKER_IMAGE /bin/bash
+docker run -d --name $CONTAINER_NAME -v $TOPDIR:/home/adv/BSP:rw --privileged $DOCKER_IMAGE tail -f /dev/null
 container=`docker ps -a | grep $CONTAINER_NAME`
 if [ -z "$container" ]; then
-	echo "Failed to create docker container!!!"
+	echo "[ERROR] Failed to create docker container!!!"
+	exit 1
+fi
+status=`docker ps -a | grep $CONTAINER_NAME | grep Exited`
+if [ ! -z "$status" ]; then
+	echo "[ERROR] Docker container is not running!"
 	exit 1
 fi
 docker start $CONTAINER_NAME
