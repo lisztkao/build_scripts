@@ -39,9 +39,9 @@ if [ ! -z "$status" ]; then
 fi
 status=`docker ps -a`
 echo "status:$status"
-echo "ls -a"
+echo `ls -a`
 cd "$TOPDIR/nvidia/"
-echo "ls -a"
+echo `ls -a`
 echo `pwd`
 docker exec $CONTAINER_NAME /bin/bash -c "./azure_docker_build.sh"
 echo "docker exec $CONTAINER_NAME /bin/bash -c ./azure_docker_build.sh"
