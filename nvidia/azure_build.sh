@@ -26,6 +26,7 @@ echo "sudo docker pull $DOCKER_IMAGE"
 
 docker pull $DOCKER_IMAGE
 docker run -d --name $CONTAINER_NAME -v $TOPDIR:/home/adv/BSP:rw --privileged $DOCKER_IMAGE tail -f /dev/null
+echo "docker run -d --name $CONTAINER_NAME -v $TOPDIR:/home/adv/BSP:rw --privileged $DOCKER_IMAGE tail -f /dev/null"
 container=`docker ps -a | grep $CONTAINER_NAME`
 if [ -z "$container" ]; then
 	echo "[ERROR] Failed to create docker container!!!"
