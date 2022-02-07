@@ -47,7 +47,7 @@ done
 echo "TOPDIR:$TOPDIR"
 echo "VERSION:$VERSION"
 echo "air020:$air020"
-export TOPDIR
+export air020
 export VERSION
 set +e
 ./all_nv_ubuntu_dailybuild.sh
