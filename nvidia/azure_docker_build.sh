@@ -2,9 +2,9 @@
 sudo apt-get update
 sudo apt-get install --reinstall kmod
 
-#git config --global user.name lisztkao
-#git config --global user.email lisztru@gmail.com
-#git clone https://github.com/lisztkao/build_scripts.git
+git config --global user.name lisztkao
+git config --global user.email lisztru@gmail.com
+git clone https://github.com/lisztkao/build_scripts.git
 
 export MACHINE_LIST="$MACHINE_LIST"
 export BUILD_NUMBER="$BUILD_NUMBER"
@@ -25,8 +25,9 @@ export RELEASE_VERSION="V0001"
 export BUILDALL_DIR="build_all"
 
 export PATH="/home/adv/bin:${PATH}"
-#mv build_scripts/nvidia/* .
-
+TOPDIR=`pwd`
+echo "TOPDIR:$TOPDIR"
+mv build_scripts/nvidia/* .
 
 set +e
 ./all_nv_ubuntu_dailybuild.sh
