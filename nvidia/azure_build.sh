@@ -25,8 +25,8 @@ echo "air020:$air020"
 echo "sudo docker pull $DOCKER_IMAGE"
 
 docker pull $DOCKER_IMAGE
-docker run -d --name $CONTAINER_NAME -v $TOPDIR:/home/adv/BSP:rw --privileged $DOCKER_IMAGE tail -f /dev/null
-echo "docker run -d --name $CONTAINER_NAME -v $TOPDIR:/home/adv/BSP:rw --privileged $DOCKER_IMAGE tail -f /dev/null"
+docker run -t -d --name $CONTAINER_NAME -v $TOPDIR:/home/adv/BSP:rw --privileged $DOCKER_IMAGE
+echo "docker run -t -d --name $CONTAINER_NAME -v $TOPDIR:/home/adv/BSP:rw --privileged $DOCKER_IMAGE"
 container=`docker ps -a | grep $CONTAINER_NAME`
 if [ -z "$container" ]; then
 	echo "[ERROR] Failed to create docker container!!!"
@@ -41,8 +41,8 @@ docker start $CONTAINER_NAME
 docker exec -it $CONTAINER_NAME /bin/sh
 docker exec $CONTAINER_NAME /bin/bash -c "./azure_docker_build.sh"
 echo "sudo docker exec $CONTAINER_NAME /bin/bash -c ./azure_docker_build.sh"
-docker stop $CONTAINER_ID
-docker rm $CONTAINER_ID
+docker stop $CONTAINER_NAME
+docker rm $CONTAINER_NAME
 
 
 	
