@@ -26,9 +26,29 @@ export BUILDALL_DIR="build_all"
 
 export PATH="/home/adv/bin:${PATH}"
 TOPDIR=`pwd`
+
+while [ $# -gt 0 ]; do
+	case ${1} in
+		-air020)
+			air020="${2}"
+			shift 2
+			;;
+		-VERSION)
+			VERSION="${2}"
+			shift 2
+			;;
+		*)
+			echo "Error: Invalid option ${1}"
+			exit 1
+			;;
+		esac
+done
+
 echo "TOPDIR:$TOPDIR"
 echo "VERSION:$VERSION"
 echo "air020:$air020"
+export TOPDIR
+export VERSION
 set +e
 ./all_nv_ubuntu_dailybuild.sh
 rc="$?"

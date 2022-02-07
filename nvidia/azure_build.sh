@@ -37,7 +37,9 @@ if [ ! -z "$status" ]; then
 	echo "[ERROR] Docker container is not running!"
 	exit 1
 fi
-docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/nvidia/;ls -a;source ./azure_docker_build.sh"
+
+docker exec $CONTAINER_NAME /bin/bash -c "sudo chown adv:adv -R BSP"
+docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/nvidia/;ls -a;source ./azure_docker_build.sh -air020 $air020 -VERSION $VERSION"
 docker stop $CONTAINER_NAME
 docker rm $CONTAINER_NAME
 
