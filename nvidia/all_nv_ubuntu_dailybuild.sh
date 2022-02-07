@@ -1,5 +1,7 @@
 #!/bin/bash
 MACHINE_LIST=""
+echo "VERSION:$VERSION"
+echo "air020:$air020"
 #AIR-020_projects
 if [ "$air020" == "true" ]; then
 	MACHINE_LIST="$MACHINE_LIST air020"
