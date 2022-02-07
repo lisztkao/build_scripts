@@ -37,8 +37,9 @@ if [ ! -z "$status" ]; then
 	echo "[ERROR] Docker container is not running!"
 	exit 1
 fi
-docker ps -a | grep $CONTAINER_NAME | grep Exited
+echo "status:$status"
 cd "$TOPDIR/nvidia/"
+echo `pwd`
 docker exec $CONTAINER_NAME /bin/bash -c "./azure_docker_build.sh"
 echo "docker exec $CONTAINER_NAME /bin/bash -c ./azure_docker_build.sh"
 docker stop $CONTAINER_NAME
