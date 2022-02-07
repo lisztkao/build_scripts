@@ -38,6 +38,7 @@ if [ ! -z "$status" ]; then
 	exit 1
 fi
 docker exec $CONTAINER_NAME /bin/bash -c "ls -a"
+docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/;ls -a"
 #docker exec $CONTAINER_NAME /bin/bash -c "cd /home/adv/BSP/build_scripts/nvidia; source ./azure_docker_build.sh"
 docker stop $CONTAINER_NAME
 docker rm $CONTAINER_NAME
