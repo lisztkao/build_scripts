@@ -19,11 +19,16 @@ while [ $# -gt 0 ]; do
 		esac
 done
 
+echo "TOPDIR:$TOPDIR"
 echo "VERSION:$VERSION"
 echo "air020:$air020"
 echo "sudo docker pull $DOCKER_IMAGE"
 sudo docker pull $DOCKER_IMAGE
-export DOCK_ID=$(sudo docker run --name jetson_linux_risc -v $TOPDIR:/home/adv/BSP:rw --privileged $DOCKER_IMAGE /bin/bash)
+export CONTAINER_ID=$(sudo docker run --name jetson_linux_risc -v $TOPDIR:/home/adv/BSP:rw --privileged $DOCKER_IMAGE /bin/bash)
+if [ -z "$CONTAINER_ID" ]; then
+	echo "Failed to create docker container!!!"
+	exit 1
+fi
 echo "sudo docker exec $DOCKER_ID /bin/bash -c ./azure_docker_build.sh"
 sudo docker exec $DOCKER_ID /bin/bash -c "./azure_docker_build.sh"
 sudo docker stop $DOCK_ID
