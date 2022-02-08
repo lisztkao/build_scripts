@@ -115,7 +115,7 @@ Author,
 Date,${DATE}
 Build Number,"${VERSION}"
 TAG,
-Tested Platform,${NEW_MACHINE}
+Tested Platform,${PRODUCT}
 MD5 Checksum,TGZ: ${MD5_SUM}
 Image Size,${FILE_SIZE}B (${FILE_SIZE_BYTE} bytes)
 Issue description, N/A
@@ -142,15 +142,11 @@ else
 	mkdir -p $OUTPUT_DIR
 fi
 
-for NEW_MACHINE in $MACHINE_LIST
-do
-	echo "[ADV] NEW_MACHINE = $NEW_MACHINE"
-	get_source_code
-	build_image
-	prepare_images
-	copy_image_to_storage
-	save_temp_log
-done
+get_source_code
+build_image
+prepare_images
+copy_image_to_storage
+save_temp_log
 cd $CURR_PATH
 echo "[ADV] build script done!"
 
