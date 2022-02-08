@@ -1,8 +1,8 @@
 #!/bin/bash
 
 PRODUCT=$1
-VERSION=$2
-SOC=$3
+SOC=$2
+VERSION=$3
 VER_PREFIX="nv"
 echo "[ADV] DATE = ${DATE}"
 echo "[ADV] STORED = ${STORED}"

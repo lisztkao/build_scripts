@@ -16,6 +16,10 @@ while [ $# -gt 0 ]; do
 			DEVICEON="${2}"
 			shift 2
 			;;
+		-s)
+			SOC="${2}"
+			shift 2
+			;;
 		*)
 			echo "Error: Invalid option ${1}"
 			exit 1
@@ -37,7 +41,7 @@ if [ ! -z "$status" ]; then
 fi
 
 docker exec $CONTAINER_NAME /bin/bash -c "sudo chown adv:adv -R BSP"
-docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/nvidia/;ls -a;source ./azure_docker_build.sh -p $PRODUCT -v $VERSION -d $DEVICEON"
+docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/nvidia/;ls -a;source ./azure_docker_build.sh -p $PRODUCT -s $SOC -v $VERSION -d $DEVICEON"
 docker stop $CONTAINER_NAME
 docker rm $CONTAINER_NAME
 

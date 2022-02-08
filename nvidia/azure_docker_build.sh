@@ -33,6 +33,10 @@ while [ $# -gt 0 ]; do
 			DEVICEON="${2}"
 			shift 2
 			;;
+		-s)
+			SOC="${2}"
+			shift 2
+			;;
 		*)
 			echo "Error: Invalid option ${1}"
 			exit 1
@@ -48,9 +52,9 @@ fi
 
 set +e
 if [ "$DEVICEON" == "1" ]; then	
-	./nv_ubuntu_dailybuild_deviceon.sh $PRODUCT ${VERSION}
+	./nv_ubuntu_dailybuild_deviceon.sh $PRODUCT $SOC $VERSION 
 else
-	./nv_ubuntu_dailybuild.sh $PRODUCT ${VERSION}
+	./nv_ubuntu_dailybuild.sh $PRODUCT $SOC $VERSION
 fi
 echo "[ADV] All done!"
 rc="$?"
