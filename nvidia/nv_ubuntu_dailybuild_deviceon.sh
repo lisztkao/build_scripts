@@ -39,10 +39,13 @@ function get_source_code()
 function build_image()
 {
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
-	echo "[ADV] building Xavier-NX / TX2-NX ..."
-	sudo ./scripts/build_release_deviceon.sh -s 186
-	echo "[ADV] building Nano ..."
-	sudo ./scripts/build_release_deviceon.sh -s 210
+	if [ ! -z "$PRODUCT" ]; then
+		echo "[ADV] building SOC:${SOC} ..."
+		sudo ./scripts/build_release.sh -s ${SOC} -v ${VERSION}
+	else
+		echo "[ADV] No such projet, exit!"
+		return 0
+	fi
 }
 
 function generate_md5()

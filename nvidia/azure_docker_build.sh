@@ -2,39 +2,35 @@
 sudo apt-get update
 sudo apt-get install --reinstall kmod
 
-#git config --global user.name lisztkao
-#git config --global user.email lisztru@gmail.com
-#git clone https://github.com/lisztkao/build_scripts.git
+BSP_URL_EPCR7200="https://AIM-Linux@dev.azure.com/AIM-Linux/EPC-R7200/_git/manifests"
+BSP_URL_AIR020="https://AIM-Linux@dev.azure.com/AIM-Linux/AIR-020/_git/manifests"
 
 export MACHINE_LIST="$MACHINE_LIST"
 export BUILD_NUMBER="$BUILD_NUMBER"
 export DATE=`date +%F`
 export STORED="./stored"
-mkdir $STORED
-
 export FTP_SITE="172.22.15.143"
 export FTP_DIR="RISC-Nvidia-Ubuntu18"
-
-#--- [platform specific] ---
-
-# export BSP_URL="https://gitlab.wise-paas.com/air-020/manifests.git"
-export BSP_URL="https://AIM-Linux@dev.azure.com/AIM-Linux/AIR-020/_git/manifests"
+export BSP_URL
 export BSP_BRANCH="master"
 export BSP_XML="default.xml"
 export RELEASE_VERSION="V0001"
 export BUILDALL_DIR="build_all"
-
 export PATH="/home/adv/bin:${PATH}"
-TOPDIR=`pwd`
 
+mkdir $STORED
 while [ $# -gt 0 ]; do
 	case ${1} in
-		-air020)
-			air020="${2}"
+		-p)
+			PRODUCT="${2}"
 			shift 2
 			;;
-		-VERSION)
+		-v)
 			VERSION="${2}"
+			shift 2
+			;;
+		-d)
+			DEVICEON="${2}"
 			shift 2
 			;;
 		*)
@@ -44,13 +40,19 @@ while [ $# -gt 0 ]; do
 		esac
 done
 
-echo "TOPDIR:$TOPDIR"
-echo "VERSION:$VERSION"
-echo "air020:$air020"
-export air020
-export VERSION
+if [[ "$PRODUCT" == *"7200"* ]]; then
+	BSP_URL=$BSP_URL_EPCR7200
+else
+	BSP_URL=$BSP_URL_AIR020
+fi
+
 set +e
-./all_nv_ubuntu_dailybuild.sh
+if [ "$DEVICEON" == "1" ]; then	
+	./nv_ubuntu_dailybuild_deviceon.sh $PRODUCT ${VERSION}
+else
+	./nv_ubuntu_dailybuild.sh $PRODUCT ${VERSION}
+fi
+echo "[ADV] All done!"
 rc="$?"
 set -e
 #---------------------------

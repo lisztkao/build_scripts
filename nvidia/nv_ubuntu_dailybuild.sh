@@ -35,12 +35,7 @@ function get_source_code()
 function build_image()
 {
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
-	if [ "$PRODUCT" == "air020" ]; then
-		echo "[ADV] building Xavier-NX / TX2-NX ..."
-		sudo ./scripts/build_release.sh -s 186 -v ${VERSION}
-		echo "[ADV] building Nano ..."
-		sudo ./scripts/build_release.sh -s 210 -v ${VERSION}
-	elif [ "$PRODUCT" == "epcr7200" ]; then
+	if [ ! -z "$PRODUCT" ]; then
 		echo "[ADV] building SOC:${SOC} ..."
 		sudo ./scripts/build_release.sh -s ${SOC} -v ${VERSION}
 	else
