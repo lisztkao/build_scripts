@@ -46,6 +46,7 @@ fi
 
 sudo git clone $GIT_BUILD_SCRIPT $WORK_DIR
 docker exec $CONTAINER_NAME /bin/bash -c "sudo chown adv:adv -R BSP"
+docker exec $CONTAINER_NAME /bin/bash -c "ls BSP/"
 #docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/nvidia/;ls -a;source ./azure_docker_build.sh -p $PRODUCT -s $SOC -v $VERSION -d $DEVICEON"
 #docker stop $CONTAINER_NAME
 #docker rm $CONTAINER_NAME
