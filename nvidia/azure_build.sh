@@ -56,7 +56,7 @@ fi
 
 sudo git clone $GIT_BUILD_SCRIPT $WORK_DIR/${GIT_BUILD_FOLDER}/
 docker exec $CONTAINER_NAME /bin/bash -c "sudo chown adv:adv -R BSP"
-docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/;cp ${GIT_BUILD_FOLDER}/nvidia/${BUILD_IMAGE_SCRIPT} .;ls -a"
+docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/;mv ${GIT_BUILD_FOLDER}/nvidia/*.sh .;ls -a"
 docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/;source ./${BUILD_IMAGE_SCRIPT} -p $PRODUCT -s $SOC -v $VERSION -d $DEVICEON"
 azcopy cp $WORK_DIR/$OUTPUT_DIR $AZCOPY_URL
 #docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/;cp nvidia/${BUILD_IMAGE_SCRIPT} .;ls -a;"
