@@ -59,29 +59,7 @@ else
 	./nv_ubuntu_dailybuild.sh $PRODUCT $SOC $VERSION
 fi
 echo "[ADV] All done!"
-rc="$?"
-set -e
-#---------------------------
-cd $STORED/$DATE
-pftp -v -n ${FTP_SITE} <<-EOF
-  user "essci\\user" "P@ssw0rdQA"
-  cd "Product\\${FTP_DIR}\\Daily Build"
-  mkdir $DATE
-  cd $DATE
-  prompt
-  binary
-  mput *
-  close
-  quit
-EOF
 
-sudo rm * -rf
-#---[return code]------------
-if [ "$rc" == "0" ]; then
-  exit 0;
-else
-  exit 1;
-fi
 
 
 

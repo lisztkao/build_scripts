@@ -4,6 +4,11 @@ DOCKER_IMAGE="advrisc/u18.04-imx8lbv1:latest"
 CONTAINER_NAME="jetson_linux_risc"
 WORK_DIR="/ext/docker/nvidia/"
 GIT_BUILD_SCRIPT="https://github.com/lisztkao/build_scripts.git"
+SAS_KEY="?sv=2020-08-04&ss=bfqt&srt=sco&sp=rwdlacupitfx&se=2022-02-09T15:40:31Z&st=2022-02-09T07:40:31Z&spr=https&sig=nxS6KIrgyzsGSKWA6tWUgGI658i18uLWqDBKpTLF4MQ%3D"
+STORAGE_ACCOUNT="riscsw"
+BLOB_CONTAINER="image"
+BLOB_FOLDER="RISC-Nvidia-Ubuntu18"
+AZCOPY_URL="https://${STORAGE_ACCOUNT}.blob.core.windows.net/${BLOB_CONTAINER}/${BLOB_FOLDER}/${SAS_KEY}"
 
 while [ $# -gt 0 ]; do
 	case ${1} in
@@ -46,10 +51,11 @@ fi
 
 sudo git clone $GIT_BUILD_SCRIPT $WORK_DIR
 docker exec $CONTAINER_NAME /bin/bash -c "sudo chown adv:adv -R BSP"
-docker exec $CONTAINER_NAME /bin/bash -c "ls BSP/"
-#docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/nvidia/;ls -a;source ./azure_docker_build.sh -p $PRODUCT -s $SOC -v $VERSION -d $DEVICEON"
-#docker stop $CONTAINER_NAME
-#docker rm $CONTAINER_NAME
+#docker exec $CONTAINER_NAME /bin/bash -c "mv BSP/nvidia/* .;ls -a;source ./azure_docker_build.sh -p $PRODUCT -s $SOC -v $VERSION -d $DEVICEON"
+docker exec $CONTAINER_NAME /bin/bash -c "mv BSP/nvidia/* .;ls -a"
+azcopy cp $WORK_DIR $AZCOPY_URL --recursive
+docker stop $CONTAINER_NAME
+docker rm $CONTAINER_NAME
 
 
 
