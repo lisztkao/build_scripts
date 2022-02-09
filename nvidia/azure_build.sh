@@ -10,6 +10,9 @@ BLOB_CONTAINER="image"
 BLOB_FOLDER="RISC-Nvidia-Ubuntu18"
 BUILD_IMAGE_SCRIPT="azure_docker_build.sh"
 AZCOPY_URL="https://${STORAGE_ACCOUNT}.blob.core.windows.net/${BLOB_CONTAINER}/${BLOB_FOLDER}/${SAS_KEY}"
+DATE=`date +%F`
+STORED="stored"
+OUTPUT_DIR="$STORED/$DATE"
 
 while [ $# -gt 0 ]; do
 	case ${1} in
@@ -52,9 +55,10 @@ fi
 
 sudo git clone $GIT_BUILD_SCRIPT $WORK_DIR
 docker exec $CONTAINER_NAME /bin/bash -c "sudo chown adv:adv -R BSP"
-#docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/;cp nvidia/${BUILD_IMAGE_SCRIPT} .;ls -a;source ./${BUILD_IMAGE_SCRIPT} -p $PRODUCT -s $SOC -v $VERSION -d $DEVICEON"
-docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/;cp nvidia/${BUILD_IMAGE_SCRIPT} .;ls -a;"
-azcopy cp $WORK_DIR $AZCOPY_URL --recursive
+docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/;cp nvidia/${BUILD_IMAGE_SCRIPT} .;ls -a;source ./${BUILD_IMAGE_SCRIPT} -p $PRODUCT -s $SOC -v $VERSION -d $DEVICEON"
+azcopy cp $WORK_DIR/$OUTPUT_DIR $AZCOPY_URL
+#docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/;cp nvidia/${BUILD_IMAGE_SCRIPT} .;ls -a;"
+#azcopy cp $WORK_DIR/$OUTPUT_DIR $AZCOPY_URL --recursive
 docker stop $CONTAINER_NAME
 docker rm $CONTAINER_NAME
 
