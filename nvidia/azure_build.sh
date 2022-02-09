@@ -8,6 +8,7 @@ SAS_KEY="?sv=2020-08-04&ss=bfqt&srt=sco&sp=rwdlacupitfx&se=2022-02-09T15:40:31Z&
 STORAGE_ACCOUNT="riscsw"
 BLOB_CONTAINER="image"
 BLOB_FOLDER="RISC-Nvidia-Ubuntu18"
+BUILD_IMAGE_SCRIPT="azure_docker_build.sh"
 AZCOPY_URL="https://${STORAGE_ACCOUNT}.blob.core.windows.net/${BLOB_CONTAINER}/${BLOB_FOLDER}/${SAS_KEY}"
 
 while [ $# -gt 0 ]; do
@@ -51,8 +52,8 @@ fi
 
 sudo git clone $GIT_BUILD_SCRIPT $WORK_DIR
 docker exec $CONTAINER_NAME /bin/bash -c "sudo chown adv:adv -R BSP"
-#docker exec $CONTAINER_NAME /bin/bash -c "mv BSP/nvidia/* .;ls -a;source ./azure_docker_build.sh -p $PRODUCT -s $SOC -v $VERSION -d $DEVICEON"
-docker exec $CONTAINER_NAME /bin/bash -c "mv BSP/nvidia/* .;ls -a"
+#docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/;cp nvidia/${BUILD_IMAGE_SCRIPT} .;ls -a;source ./${BUILD_IMAGE_SCRIPT} -p $PRODUCT -s $SOC -v $VERSION -d $DEVICEON"
+docker exec $CONTAINER_NAME /bin/bash -c "cd BSP/;cp nvidia/${BUILD_IMAGE_SCRIPT} .;ls -a;"
 azcopy cp $WORK_DIR $AZCOPY_URL --recursive
 docker stop $CONTAINER_NAME
 docker rm $CONTAINER_NAME
