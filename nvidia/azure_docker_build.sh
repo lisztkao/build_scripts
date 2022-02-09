@@ -1,6 +1,8 @@
 #!/bin/bash -ex
 sudo apt-get update
 sudo apt-get install --reinstall kmod
+sudo mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc
+sudo update-binfmts --enable qemu-aarch64
 
 BSP_URL_EPCR7200="https://AIM-Linux@dev.azure.com/AIM-Linux/EPC-R7200/_git/manifests"
 BSP_URL_AIR020="https://AIM-Linux@dev.azure.com/AIM-Linux/AIR-020/_git/manifests"
