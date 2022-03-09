@@ -36,7 +36,7 @@ function build_image()
 {
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 	if [ ! -z "$PRODUCT" ]; then
-		echo "[ADV] building SOC:${SOC} ..."
+		echo "[ADV] building SOC:${SOC} ${VERSION} ..."
 		sudo ./scripts/build_release.sh -s ${SOC} -v ${VERSION}
 	else
 		echo "[ADV] No such projet, exit!"
