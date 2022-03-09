@@ -37,13 +37,8 @@ function get_source_code()
 function build_image()
 {
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
-	if [ "$PRODUCT" == "air020" ]; then
-		echo "[ADV] building Xavier-NX / TX2-NX ..."
-		sudo ./scripts/build_release.sh -s 186 -v ${VERSION}
-		echo "[ADV] building Nano ..."
-		sudo ./scripts/build_release.sh -s 210 -v ${VERSION}
-	elif [ "$PRODUCT" == "epcr7200" ]; then
-		echo "[ADV] building SOC:${SOC} ..."
+	if [ ! -z "$PRODUCT" ]; then
+		echo "[ADV] building SOC:${SOC} ${VERSION} ..."
 		sudo ./scripts/build_release.sh -s ${SOC} -v ${VERSION}
 	else
 		echo "[ADV] No such projet, exit!"
@@ -54,13 +49,8 @@ function build_image()
 function build_ota_image()
 {
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
-	if [ "$PRODUCT" == "air020" ]; then
-		echo "[ADV] building ota image ..."
-		sudo ./scripts/build_ota.sh -s 186 -v ${VERSION}
-		sudo ./scripts/build_ota.sh -s 194 -v ${VERSION}
-		sudo ./scripts/build_ota.sh -s 210 -v ${VERSION}
-	elif [ "$PRODUCT" == "epcr7200" ]; then
-		echo "[ADV] building ota image SOC:${SOC} ..."
+	if [ ! -z "$PRODUCT" ]; then
+		echo "[ADV] building ota image SOC:${SOC} ${VERSION} ..."
 		sudo ./scripts/build_ota.sh -s ${SOC} -v ${VERSION}
 	else
 		echo "[ADV] No such projet, exit!"
