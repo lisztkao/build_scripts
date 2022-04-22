@@ -269,7 +269,7 @@ function create_xml_and_commit()
 
 function check_tag()
 {
-	#-- Advantech/rk3399 gitlab android source code repository
+	#-- jetson source code repository
 	echo "[ADV-ROOT]  $ROOT_DIR"
 	echo "[ADV] JETSON_L4T_PATH = $CURR_PATH/$ROOT_DIR/Linux_for_Tegra"
 	echo "[ADV] JETSON_KERNEL_PATH = $CURR_PATH/$ROOT_DIR/kernel"

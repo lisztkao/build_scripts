@@ -4,7 +4,7 @@ MACHINE_LIST=""
 if [ "$air020" == "true" ]; then
 	MACHINE_LIST="$MACHINE_LIST air020"
 	export MACHINE_LIST
-	./nv_ubuntu_officialbuild.sh air020 "${VERSION}"
+	./nv_ubuntu_officialbuild.sh air020 "${VERSION}" "${SOC}"
 fi
 
 #EPC-R7200_projects
