@@ -29,7 +29,7 @@ function get_source_code()
 	echo "[ADV] get nVidia source code"
 	mkdir $ROOT_DIR
 	pushd $ROOT_DIR 2>&1 > /dev/null
-	repo init -u $BSP_URL
+	repo init -u $BSP_URL -m ${BSP_XML}
 	repo sync -j8
 	popd
 }
