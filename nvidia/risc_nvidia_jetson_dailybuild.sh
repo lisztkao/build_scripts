@@ -134,6 +134,9 @@ else
 	mkdir -p $OUTPUT_DIR
 fi
 
+export GIT_SSL_NO_VERIFY=1
+sudo apt-get install flex device-tree-compiler -y
+
 get_source_code
 build_image
 prepare_images
