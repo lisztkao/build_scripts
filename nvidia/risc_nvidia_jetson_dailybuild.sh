@@ -5,11 +5,12 @@ echo "[ADV] STORED = ${STORED}"
 echo "[ADV] BSP_URL = ${BSP_URL}"
 echo "[ADV] BSP_BRANCH = ${BSP_BRANCH}"
 echo "[ADV] BSP_XML = ${BSP_XML}"
-echo "[ADV] BLOB_PROJECT_OFFSET = ${PLATFORM_PREFIX}"
+echo "[ADV] PLATFORM_PREFIX = ${PLATFORM_PREFIX}"
 echo "[ADV] TARGET_BOARD=$TARGET_BOARD"
 echo "[ADV] VERSION_NUMBER=$VERSION_NUMBER"
+VERPREZERO=`printf "%05d\n" $VERSION_NUMBER`
 CURR_PATH="$PWD"
-VER_TAG="${BLOB_PROJECT_OFFSET}${VERSION_NUMBER}"
+VER_TAG="${PLATFORM_PREFIX}${VERPREZERO}"
 ROOT_DIR="${VER_TAG}"_"$DATE"
 echo "[ADV] VER_TAG=$VER_TAG"
 echo "[ADV] ROOT_DIR=$ROOT_DIR"
@@ -55,7 +56,7 @@ function prepare_images()
 	sudo rm bootloader/system.img.raw
 	tar czf ${VER_TAG}.tgz bootloader
 	mv ${VER_TAG}.tgz ../
-	pop
+	popd
 	generate_md5 ${VER_TAG}.tgz
 	popd
 }
