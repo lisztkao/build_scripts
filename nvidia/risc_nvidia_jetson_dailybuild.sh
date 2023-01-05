@@ -11,6 +11,8 @@ echo "[ADV] VERSION_NUMBER=$VERSION_NUMBER"
 CURR_PATH="$PWD"
 VER_TAG="${BLOB_PROJECT_OFFSET}${VERSION_NUMBER}"
 ROOT_DIR="${VER_TAG}"_"$DATE"
+echo "[ADV] VER_TAG=$VER_TAG"
+echo "[ADV] ROOT_DIR=$ROOT_DIR"
 OUTPUT_DIR="$CURR_PATH/$STORED/$DATE"
 LINUX_TEGRA="Linux_for_Tegra"
 
@@ -47,10 +49,13 @@ function generate_md5()
 function prepare_images()
 {
 	echo "[ADV] creating ${VER_TAG}.tgz ..."
-	pushd $CURR_PATH/$ROOT_DIR/$LINUX_TEGRA 2>&1 > /dev/null
+	pushd $CURR_PATH/$ROOT_DIR/ 2>&1 > /dev/null
+	pushd $LINUX_TEGRA
 	sudo ./flash.sh --no-flash ${TARGET_BOARD} mmcblk0p1
 	sudo rm bootloader/system.img.raw
-	sudo tar czf ${VER_TAG}.tgz bootloader
+	tar czf ${VER_TAG}.tgz bootloader
+	mv ${VER_TAG}.tgz ../
+	pop
 	generate_md5 ${VER_TAG}.tgz
 	popd
 }
@@ -135,7 +140,7 @@ else
 fi
 
 export GIT_SSL_NO_VERIFY=1
-sudo apt-get install flex device-tree-compiler -y
+sudo apt-get install flex bison device-tree-compiler -y
 
 get_source_code
 build_image
