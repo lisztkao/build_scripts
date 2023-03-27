@@ -63,11 +63,11 @@ function prepare_images()
 			echo "sudo ./flash.sh --no-flash -d rootfs/boot/${DTB} ${TARGET_BOARD} mmcblk0p1"
 		fi
 		pwd
-		ls
+		ls -al
 		sudo rm bootloader/system.img.raw
-		tar cvzf ${VER_TAG}.tgz bootloader
-		ls czf ${VER_TAG}.tgz
-		mv ${VER_TAG}.tgz ../
+		tar cvzf ${IMAGE_VER}.tgz bootloader
+		ls ${IMAGE_VER}.tgz
+		mv ${IMAGE_VER}.tgz ../
 		popd
 	fi
 
