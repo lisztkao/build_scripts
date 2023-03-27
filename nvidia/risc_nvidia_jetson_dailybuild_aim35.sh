@@ -60,9 +60,12 @@ function prepare_images()
 			sudo ./flash.sh --no-flash ${TARGET_BOARD} mmcblk0p1
 		else
 			sudo ./flash.sh --no-flash -d rootfs/boot/${DTB} ${TARGET_BOARD} mmcblk0p1
+			echo "sudo ./flash.sh --no-flash -d rootfs/boot/${DTB} ${TARGET_BOARD} mmcblk0p1"
 		fi
+		pwd
+		ls
 		sudo rm bootloader/system.img.raw
-		tar czf ${VER_TAG}.tgz bootloader
+		tar cvzf ${VER_TAG}.tgz bootloader
 		ls czf ${VER_TAG}.tgz
 		mv ${VER_TAG}.tgz ../
 		popd
