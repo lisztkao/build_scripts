@@ -33,7 +33,7 @@ function get_source_code()
 function build_image()
 {
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
-	echo "[ADV] building ..."
+	echo "[ADV] building ver:${RELEASE_VERSION}..."
 	sudo ./scripts/build_release.sh -v ${RELEASE_VERSION}
 }
 
