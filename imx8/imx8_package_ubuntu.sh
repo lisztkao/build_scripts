@@ -117,6 +117,10 @@ function create_ubuntu_image()
             ;;
         AIM30)
             IMAGE_SIZE=6500
+            YOCTO_IMAGE="*-image-*${CPU_TYPE_Module}${NEW_MACHINE}*.sdcard"
+            ;;
+	AIM33)
+            IMAGE_SIZE=6500
             YOCTO_IMAGE="*-image-*${CPU_TYPE_Module}${NEW_MACHINE}*.wic"
             ;;
         *)
@@ -150,8 +154,11 @@ EOF
 		    mv ${FILE/.tgz}/image/*.sdcard .
 		    ;;
 		AIM30)
-		    mv ${FILE/.tgz}/image/*.wic .
+		    mv ${FILE/.tgz}/image/*.sdcard .
 		    ;;
+		AIM33)
+                    mv ${FILE/.tgz}/image/*.wic .
+                    ;;
 		*)
 		    echo "cannot read AIM version from \"$AIM_VERSION\""; exit 1 ;;
 		esac
@@ -240,6 +247,7 @@ TOTAL_LIST=" \
     ROM5620A1_8X \
     ROM3620A1_8X \
     ROM5721A1_8MM \
+    RSB3730A1_8MM \
     ROM5722A1_8MP \
     RSB3720A1_8MP
 "
@@ -279,6 +287,7 @@ do
     rom5620a1) PROD="5620A1" ;;
     rom3620a1) PROD="3620A1" ;;
     rom5721a1) PROD="5721A1" ;;
+    rsb3730a1) PROD="3730A1" ;;
     rom5722a1) PROD="5722A1" ;;
     rsb3720a1) PROD="3720A1" ;;
     *) echo "cannot handle \"$NEW_MACHINE\""; exit 1 ;;

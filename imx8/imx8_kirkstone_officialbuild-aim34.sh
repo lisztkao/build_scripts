@@ -92,6 +92,11 @@ function define_cpu_type()
                         KERNEL_CPU_TYPE="imx8qm"
                         CPU_TYPE="iMX8QM"
                         ;;
+                "8U")
+			PRODUCT=`expr $1 : '\(.*\).*-'`
+			KERNEL_CPU_TYPE="imx8ulp"
+			CPU_TYPE="iMX8ULP"
+			;;
                 *)
                         # Do nothing
                         ;;
@@ -432,7 +437,6 @@ function copy_image_to_storage()
 
 function get_bsp_tarball()
 {
-	echo "[ADV] get bsp tarball path $STORAGE_PATH and file name is ${ROOT_DIR}"
 	if [ -e $STORAGE_PATH/${ROOT_DIR}.tgz ] ; then
 		tar zxf $STORAGE_PATH/${ROOT_DIR}.tgz
 	else
@@ -507,6 +511,7 @@ else # "$PRODUCT" != "$VER_PREFIX"
                 # Create manifests xml and commit
                 create_xml_and_commit
         fi
+
 fi
 
 #cd $CURR_PATH

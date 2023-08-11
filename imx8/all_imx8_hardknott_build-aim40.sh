@@ -1,9 +1,11 @@
 #!/bin/bash
 if [ "x${ALSO_BUILD_OFFICIAL_IMAGE}" != "x" ]; then
 	# Dailybuild
+	echo "[ADV] Dailybuild Start"
 	BUILD_SH="./imx8_hardknott_dailybuild-aim40.sh"
 	VERSION_NUM=${RELEASE_VERSION}
 else
+	echo "[ADV] Officialbuild Start"
 	NUM1=`expr $VERSION : 'V\([0-9A-Z]*\)'`
 	NUM2=`expr $VERSION : '.*[.]\([0-9A-Z]*\)'`
 	# Official release

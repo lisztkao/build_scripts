@@ -1,13 +1,12 @@
 #!/bin/bash
 
 ADV_PATH="\
-android10-patch \
 u-boot \
-kernel \
+kernel-4.19 \
 . \
 "
 
-VER_PREFIX="RK3399_Q10_"
+VER_PREFIX="RK3399_S12_"
 
 idx=0
 isFirstMachine="true"
@@ -42,9 +41,8 @@ CURR_PATH="$PWD"
 ROOT_DIR="${VER_TAG}"_"$DATE"
 SUB_DIR="android"
 OUTPUT_DIR="$CURR_PATH/$STORED/$DATE"
-PATCH_DIR="android10-patch"
 
-#-- Advantech/rk3399 gitlab android source code repository
+#-- Advantech/rk3399 azure android source code repository
 echo "[ADV-ROOT]  $ROOT_DIR"
 for TEMP_PATH in ${ADV_PATH}
 do
@@ -53,8 +51,8 @@ done
 #--------------------------------------------------
 #======================
 AND_BSP="android"
-AND_BSP_VER="10.0"
-AND_VERSION="android_Q10.0"
+AND_BSP_VER="12.0"
+AND_VERSION="android_S12.0"
 
 #======================
 
@@ -257,10 +255,6 @@ function get_source_code()
        ../repo/repo init -u $BSP_URL -b $BSP_BRANCH -m $BSP_XML
     fi
     ../repo/repo sync
-    
-     cd $CURR_PATH/$ROOT_DIR/$SUB_DIR/
-     git clone https://AIM-Linux@dev.azure.com/AIM-Linux/risc-private-bsp/_git/rk3399-androidQ10-patch android10-patch
-
 
     for TEMP_PATH in ${ADV_PATH}
     do
@@ -275,6 +269,9 @@ function get_source_code()
     done
 
     cd $CURR_PATH
+    
+    tar zxvf external-rk3399-AndroidS12*.tar.gz -C $CURR_PATH/$ROOT_DIR/android
+    tar zxvf prebuilts-rk3399-AndroidS12*.tar.gz -C $CURR_PATH/$ROOT_DIR/android
 }
 
 function building()
@@ -282,41 +279,14 @@ function building()
     echo "[ADV] building $1 ..."
     LOG_FILE="$NEW_MACHINE"_Build.log
 
-    LOG_FILE_UBOOT="$NEW_MACHINE"_Build_uboot.log
-    LOG_FILE_KERNEL="$NEW_MACHINE"_Build_kernel.log
     LOG_FILE_ANDROID="$NEW_MACHINE"_Build_android.log
 
-    if [ "$1" == "uboot" ]; then
-        echo "[ADV] build uboot UBOOT_DEFCONFIG=$UBOOT_DEFCONFIG"
-        cd $CURR_PATH/$ROOT_DIR/$SUB_DIR/u-boot
-        make clean
-        echo " V$RELEASE_VERSION" > .scmversion
-        bash make.sh $UBOOT_DEFCONFIG >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_UBOOT
-	elif [ "$1" == "kernel" ]; then
-        echo "[ADV] build kernel KERNEL_DEFCONFIG = $KERNEL_DEFCONFIG KERNEL_DTB=$KERNEL_DTB"
-        cd $CURR_PATH/$ROOT_DIR/$SUB_DIR/kernel
-        make distclean
-        make ARCH=arm64 $KERNEL_DEFCONFIG >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_KERNEL
-        make ARCH=arm64 $KERNEL_DTB -j8 >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_KERNEL
-    elif [ "$1" == "android" ]; then
-        echo "[ADV] patch android form private-gitlab"
-        cd $CURR_PATH/$ROOT_DIR/$SUB_DIR/
-        patch_files=$(ls $PATCH_DIR)
-        for filename in $patch_files
-        do
-	    echo "[ADV] android patche-file's $filename"
-            if [ -f "$PATCH_DIR/$filename" ];then
-                if [ "${filename##*.}x" = "patch"x ];then
-                    echo "[ADV] android patched $PATCH_DIR/$filename"
-                    patch -p1 < $PATCH_DIR/$filename
-                fi
-            fi
-        done
-	echo "[ADV] build android ANDROID_PRODUCT=$ANDROID_PRODUCT"
+    if [ "$1" == "android" ]; then
+	    echo "[ADV] build android ANDROID_PRODUCT=$ANDROID_PRODUCT"
         source build/envsetup.sh
         lunch $ANDROID_PRODUCT
         make clean
-        make -j8 2>> $CURR_PATH/$ROOT_DIR/$LOG_FILE_ANDROID
+        ./build.sh -AUCKuop 2>> $CURR_PATH/$ROOT_DIR/$LOG_FILE_ANDROID
     else
         echo "[ADV] pass building..."
     fi
@@ -337,35 +307,12 @@ function build_android_images()
     cd $CURR_PATH/$ROOT_DIR/$SUB_DIR/
 
     set_environment
-    building uboot
-    building kernel
     building android
-    ./mkimage.sh
 }
 
-function build_android_OTA_images()
-{
-    LOG_FILE_OTA="$NEW_MACHINE"_Build_OTA.log
-    cd $CURR_PATH/$ROOT_DIR/$SUB_DIR/
-    set_environment
-    ./mkimage.sh ota
-    make -j4 otapackage 2>> $CURR_PATH/$ROOT_DIR/$SUB_DIR/$LOG_FILE_OTA
-}
 
 function prepare_images()
 {
-    # update.img
-#    UPDATE_TOOL_PATH="rk3288_tools/Linux_rockdev_android8.1/rockdev"
-#    cd $CURR_PATH
-#    echo "[ADV] clone rk3288 tools"
-#    git clone https://github.com/ADVANTECH-Rockchip/rk3288_tools.git
-#    cd $UPDATE_TOOL_PATH
-
-#    chmod 777 afptool mkupdate.sh rkImageMaker unpack.sh
-#    cp -aRL $CURR_PATH/$ROOT_DIR/rockdev/Image-$TARGET_PRODUCT/* ./Image
-#    echo "[ADV] make update.img"
-#    ./mkupdate.sh
-
     cd $CURR_PATH
     IMAGE_DIR="${VER_TAG}"_"$NEW_MACHINE"_"$DATE"
     echo "[ADV] mkdir $IMAGE_DIR"
@@ -379,17 +326,11 @@ function prepare_images()
 
     # Copy image files to image directory
     cp -aRL $CURR_PATH/$ROOT_DIR/$SUB_DIR/rockdev/Image-$TARGET_PRODUCT/* $IMAGE_DIR/rockdev/image
-    # cp -a $CURR_PATH/$UPDATE_TOOL_PATH/*.img $IMAGE_DIR/rockdev
 
-    # OTA images
-#    build_android_OTA_images
-#    cd $CURR_PATH
-#    cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$TARGET_PRODUCT/*.zip $IMAGE_DIR/rockdev
 
     echo "[ADV] creating ${IMAGE_DIR}.tgz ..."
     tar czf ${IMAGE_DIR}.tgz $IMAGE_DIR
     generate_md5 ${IMAGE_DIR}.tgz
-    #rm -rf $IMAGE_DIR
 }
 
 function copy_image_to_storage()

@@ -9,6 +9,7 @@ echo "[ADV] BSP_XML = ${BSP_XML}"
 echo "[ADV] PLATFORM_PREFIX = ${PLATFORM_PREFIX}"
 echo "[ADV] TARGET_BOARD=$TARGET_BOARD"
 echo "[ADV] VERSION_NUMBER=$VERSION_NUMBER"
+echo "[ADV] DTB=$DTB"
 
 CURR_PATH="$PWD"
 ROOT_DIR="${PLATFORM_PREFIX}_${TARGET_BOARD}_${RELEASE_VERSION}_${DATE}"
@@ -32,7 +33,7 @@ function get_source_code()
 function build_image()
 {
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
-	echo "[ADV] building ..."
+	echo "[ADV] building ver:${RELEASE_VERSION}..."
 	sudo ./scripts/build_release.sh -v ${RELEASE_VERSION}
 }
 
@@ -55,10 +56,14 @@ function prepare_images()
 		sudo tar czf ${IMAGE_VER}.tgz $LINUX_TEGRA
 	else
 		pushd $LINUX_TEGRA
-		sudo ./flash.sh --no-flash ${TARGET_BOARD} mmcblk0p1
+		if [ -z "${DTB}" ]; then
+			sudo ./flash.sh --no-flash ${TARGET_BOARD} mmcblk0p1
+		else
+			sudo ./flash.sh --no-flash -d rootfs/boot/${DTB} ${TARGET_BOARD} mmcblk0p1
+		fi
 		sudo rm bootloader/system.img.raw
-		tar czf ${VER_TAG}.tgz bootloader
-		mv ${VER_TAG}.tgz ../
+		tar czf ${IMAGE_VER}.tgz bootloader
+		mv ${IMAGE_VER}.tgz ../
 		popd
 	fi
 

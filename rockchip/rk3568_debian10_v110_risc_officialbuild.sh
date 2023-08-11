@@ -1,7 +1,8 @@
 #!/bin/bash
 
-PLATFORM_PREFIX="RK3399_RISC_"
-VER_PREFIX="UIV"
+PLATFORM_PREFIX="RK3568_RISC_"
+VER_PREFIX="DIV"
+BSP_VER_PREFIX="DBV"
 
 
 idx=0
@@ -29,7 +30,9 @@ echo "[ADV] BUILD_NUMBER = ${BUILD_NUMBER}"
 VER_TAG="${PLATFORM_PREFIX}${VER_PREFIX}"$(echo $RELEASE_VERSION | sed 's/[.]//')
 echo "[ADV] VER_TAG = $VER_TAG"
 OFFICIAL_VER="${MODEL_NAME}${HW_VER}${AIM_VERSION}${VER_PREFIX}"$(echo $RELEASE_VERSION | sed 's/[.]//')
+BSP_VER="${MODEL_NAME}${HW_VER}${AIM_VERSION}${BSP_VER_PREFIX}"$(echo $RELEASE_VERSION | sed 's/[.]//')
 echo "[ADV] OFFICIAL_VER = $OFFICIAL_VER"
+echo "[ADV] BSP_VER = $BSP_VER"
 echo "[ADV] isFirstMachine = $isFirstMachine"
 CURR_PATH="$PWD"
 ROOT_DIR="${PLATFORM_PREFIX}${VER_PREFIX}${RELEASE_VERSION}"_"$DATE"
@@ -41,8 +44,8 @@ REALEASE_NOTE="Release_Note"
 #--------------------------------------------------
 #======================
 AND_BSP="debian"
-AND_BSP_VER="9.x"
-AND_VERSION="debian_V9.x"
+AND_BSP_VER="10.x"
+AND_VERSION="debian_V10.x"
 
 #======================
 
@@ -65,20 +68,13 @@ function auto_add_tag()
     HEAD_HASH_ID=`git rev-parse HEAD`
     TAG_HASH_ID=`git tag -v $VER_TAG | grep object | cut -d ' ' -f 2`
     REMOTE_SERVER=`git remote -v | grep push | cut -d $'\t' -f 1`
-    cd $CURR_PATH/$ROOT_DIR/
     if [ "$HEAD_HASH_ID" == "$TAG_HASH_ID" ]; then
         echo "[ADV] tag exists! There is no need to add tag"
     else
         echo "[ADV] Add tag $VER_TAG"
-        ../repo/repo forall -c git tag -a $VER_TAG -m "[Official Release] $VER_TAG"
-        ../repo/repo forall -c git push $REMOTE_SERVER $VER_TAG
-
-        # rootfs_adv_priv
-        cd $CURR_PATH/$ROOT_DIR/rootfs_adv_priv
-        REMOTE_SERVER=`git remote -v | grep push | cut -d $'\t' -f 1`
-        git tag -a $VER_TAG -m "[Official Release] $VER_TAG"
-        git push $REMOTE_SERVER $VER_TAG
-        cd ..
+        cd $CURR_PATH/$ROOT_DIR
+	../repo/repo forall -c git tag -a $VER_TAG -m "[Official Release] $VER_TAG"
+	../repo/repo forall -c git push $REMOTE_SERVER $VER_TAG
     fi
     cd $CURR_PATH
 }
@@ -118,6 +114,7 @@ function uboot_version_commit()
 
 	# push to github
 	REMOTE_SERVER=`git remote -v | grep push | cut -d $'\t' -f 1`
+	echo " V$RELEASE_VERSION" > .scmversion
 	git add .scmversion -f
 	git commit -m "[Official Release] ${VER_TAG}"
 	git push $REMOTE_SERVER local:$BSP_BRANCH
@@ -157,8 +154,7 @@ function generate_csv()
     HASH_DEBIAN_PREBUILTS=$(cd $CURR_PATH/$ROOT_DIR/prebuilts && git rev-parse --short HEAD)
     HASH_DEBIAN_RKBIN=$(cd $CURR_PATH/$ROOT_DIR/rkbin && git rev-parse --short HEAD)
     HASH_DEBIAN_ROOTFS=$(cd $CURR_PATH/$ROOT_DIR/debian && git rev-parse --short HEAD)
-    HASH_DEBIAN_ROOTFS_ADV=$(cd $CURR_PATH/$ROOT_DIR/rootfs_adv && git rev-parse --short HEAD)
-    HASH_DEBIAN_ROOTFS_ADV_PRIV=$(cd $CURR_PATH/$ROOT_DIR/rootfs_adv_priv && git rev-parse --short HEAD)
+    HASH_DEBIAN_ROOTFS_ADV=$(cd $CURR_PATH/$ROOT_DIR/debian_adv && git rev-parse --short HEAD)
     HASH_DEBIAN_TOOLS=$(cd $CURR_PATH/$ROOT_DIR/tools && git rev-parse --short HEAD)
 
     cd $CURR_PATH
@@ -191,7 +187,6 @@ DEBIAN_PREBUILTS, ${HASH_DEBIAN_PREBUILTS}
 DEBIAN_RKBIN, ${HASH_DEBIAN_RKBIN}
 DEBIAN_ROOTFS, ${HASH_DEBIAN_ROOTFS}
 DEBIAN_ROOTFS_ADV, ${HASH_DEBIAN_ROOTFS_ADV}
-DEBIAN_ROOTFS_ADV_PRIV, ${HASH_DEBIAN_ROOTFS_ADV_PRIV}
 DEBIAN_TOOLS, ${HASH_DEBIAN_TOOLS}
 
 
@@ -230,7 +225,7 @@ function save_temp_log()
 
 function get_source_code()
 {
-    echo "[ADV] get rk3399 debian9 source code"
+    echo "[ADV] get rk3568 debian10 source code"
     cd $CURR_PATH
 
     git clone https://github.com/ADVANTECH-Rockchip/repo.git
@@ -238,13 +233,6 @@ function get_source_code()
     mkdir $ROOT_DIR
     cd $ROOT_DIR
 
-    # rootfs_adv_priv
-    git clone https://gitlab.edgecenter.io/risc-private-bsp/rk3399/rootfs_adv_priv.git
-    cd rootfs_adv_priv
-    REMOTE_SERVER=`git remote -v | grep push | cut -d $'\t' -f 1`
-    git checkout -b local --track $REMOTE_SERVER/$BSP_BRANCH
-    cd ..
-	
     if [ "$BSP_BRANCH" == "" ] ; then
        ../repo/repo init -u $BSP_URL
     elif [ "$BSP_XML" == "" ] ; then
@@ -258,6 +246,14 @@ function get_source_code()
     REMOTE_SERVER=`git remote -v | grep push | cut -d $'\t' -f 1`
     cd ..
     ../repo/repo forall -c git checkout -b local --track $REMOTE_SERVER/$BSP_BRANCH
+
+    if [ "$MODEL_NAME" == "EBCRB07" ] ; then
+        git clone https://AIM-Linux@dev.azure.com/AIM-Linux/risc-private-bsp/_git/rk3568_linux_debian_ebcrb07 ./debian_$MODEL_NAME
+        cd ./debian_$MODEL_NAME
+        REMOTE_SERVER=`git remote -v | grep push | cut -d $'\t' -f 1`
+        git checkout -b local --track $REMOTE_SERVER/$BSP_BRANCH
+        cd ..
+    fi
 
     cd $CURR_PATH
 }
@@ -277,41 +273,51 @@ function building()
 		cd $CURR_PATH/$ROOT_DIR/u-boot
 		make clean
 		echo " V$RELEASE_VERSION" > .scmversion
-		./make.sh $UBOOT_DEFCONFIG >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_UBOOT
+		./make.sh $UBOOT_DEFCONFIG >&1 | tee $CURR_PATH/$ROOT_DIR/$LOG_FILE_UBOOT
 	elif [ "$1" == "kernel" ]; then
 		echo "[ADV] build kernel KERNEL_DEFCONFIG = $KERNEL_DEFCONFIG KERNEL_DTB=$KERNEL_DTB"
 		cd $CURR_PATH/$ROOT_DIR/kernel
 
 		echo "[ADV] build kernel make ARCH=arm64 $KERNEL_DEFCONFIG"
 		make clean
-		make ARCH=arm64 $KERNEL_DEFCONFIG >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_KERNEL
+		make ARCH=arm64 $KERNEL_DEFCONFIG >&1 | tee $CURR_PATH/$ROOT_DIR/$LOG_FILE_KERNEL
 		echo "[ADV] build kernel make ARCH=arm64 $KERNEL_DTB -j12"
-		make ARCH=arm64 $KERNEL_DTB -j12 >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_KERNEL
+		make ARCH=arm64 $KERNEL_DTB -j12 >&1 | tee -a $CURR_PATH/$ROOT_DIR/$LOG_FILE_KERNEL
     elif [ "$1" == "recovery" ]; then
 		sudo apt-get update
 		sudo apt-get install -y expect-dev
 		echo "[ADV] build recovery"
 		cd $CURR_PATH/$ROOT_DIR
-		if [  -d "buildroot/output/rockchip_rk3399_recovery" ];then
-		    rm buildroot/output/rockchip_rk3399_recovery -rf
+		if [  -d "buildroot/output/rockchip_rk356x_recovery " ];then
+		    rm buildroot/output/rockchip_rk356x_recovery  -rf
 		fi
-		source envsetup.sh rockchip_rk3399_recovery
-		./build.sh recovery >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_RECOVERY
+		source envsetup.sh rockchip_rk356x_recovery 
+		./build.sh recovery >&1 | tee $CURR_PATH/$ROOT_DIR/$LOG_FILE_RECOVERY
     elif [ "$1" == "rootfs" ]; then
 		echo "[ADV] build rootfs"
 		sudo apt-get update
 		sudo apt-get install -y binfmt-support
+		sudo apt --fix-broken install -f -y
+
 		sudo apt-get install -y qemu-user-static
 		sudo apt-get -y update
 		sudo apt-get install -y live-build
 
 		cd $CURR_PATH/$ROOT_DIR/debian
 		sudo dpkg -i ubuntu-build-service/packages/*
-		sudo apt-get install -f 
-		cd $CURR_PATH/$ROOT_DIR/rootfs_adv/ubuntu18.04/
-		sudo BUILD_IN_DOCKER=TRUE ./mk-ubuntu.sh >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_ROOTFS
-		cd $CURR_PATH/$ROOT_DIR/rootfs_adv_priv/ubuntu18.04/
-		sudo BUILD_IN_DOCKER=TRUE ./mk-ubuntu.sh >> $CURR_PATH/$ROOT_DIR/$LOG_FILE_ROOTFS
+		sudo apt-get install -f -y
+		cd $CURR_PATH/$ROOT_DIR/
+		sudo BUILD_IN_DOCKER=TRUE ./mk-debian.sh new >&1 | tee $CURR_PATH/$ROOT_DIR/$LOG_FILE_ROOTFS
+
+		if [ -d "debian_$MODEL_NAME" ];then
+			cd $CURR_PATH/$ROOT_DIR/
+			cd debian_$MODEL_NAME
+			sudo BUILD_IN_DOCKER=TRUE ARCH=arm64 ./mk-adv.sh
+			cd ../debian
+			sudo ./mk-image.sh
+			cd $CURR_PATH/$ROOT_DIR/
+		fi
+
 	else
         echo "[ADV] pass building..."
     fi
@@ -323,7 +329,11 @@ function build_linux_images()
 {
     cd $CURR_PATH/$ROOT_DIR
 	echo "[ADV] build linux images begin"
-	
+
+	TARGET_PRODUCT="device/rockchip/.target_product"
+	TARGET_PRODUCT_DIR=$(realpath ${TARGET_PRODUCT})
+	ln -rfs $TARGET_PRODUCT_DIR/$BOARD_CONFIG device/rockchip/.BoardConfig.mk
+
 	building uboot
 	building kernel
 	if [ $isFirstMachine == "true" ]; then
@@ -334,7 +344,7 @@ function build_linux_images()
     # package image to rockdev folder
 	cd $CURR_PATH/$ROOT_DIR
 	echo "[ADV] build link images to rockdev"
-	source envsetup.sh rockchip_rk3399_recovery
+	source envsetup.sh rockchip_rk356x_recovery 
 	./mkfirmware.sh
 	echo "[ADV] build linux images end"
 }
@@ -354,17 +364,46 @@ function prepare_images()
     fi
 
     cp -aRL $CURR_PATH/$ROOT_DIR/tools/windows/DriverAssitant_*.zip $IMAGE_DIR/
+    cp -aRL $CURR_PATH/$ROOT_DIR/tools/windows/SDDiskTool_*.zip $IMAGE_DIR/
 
     mkdir -p $IMAGE_DIR/rockdev/image
 
     # Copy image files to image directory
-
-    cp -aRL $CURR_PATH/$ROOT_DIR/rockdev/* $IMAGE_DIR/rockdev/image/
-    cp -aRL $CURR_PATH/$ROOT_DIR/rootfs_adv/ubuntu18.04/rootfs.img $IMAGE_DIR/rockdev/image/
+    cp -aRL $CURR_PATH/$ROOT_DIR/rockdev/* $IMAGE_DIR/rockdev/image
     echo "[ADV] creating ${IMAGE_DIR}.tgz ..."
     tar czf ${IMAGE_DIR}.img.tgz $IMAGE_DIR
     generate_md5 ${IMAGE_DIR}.img.tgz
     #rm -rf $IMAGE_DIR
+
+    # BSP
+    cd $CURR_PATH
+    BSP_DIR="${BSP_VER}"_"$DATE"
+    mkdir $BSP_DIR
+
+    cd $CURR_PATH/$ROOT_DIR
+    cd u-boot
+    make clean
+    git add . -f
+    git reset --hard
+
+    cd $CURR_PATH/$ROOT_DIR
+    cd kernel
+    make clean
+    git add . -f
+    git reset --hard
+
+    cd $CURR_PATH
+    cp -R $CURR_PATH/$ROOT_DIR/u-boot $BSP_DIR/
+    rm -rf $BSP_DIR/u-boot/.git
+    cp -R $CURR_PATH/$ROOT_DIR/kernel $BSP_DIR/
+    rm -rf $BSP_DIR/kernel/.git
+    cp -R $CURR_PATH/$ROOT_DIR/rkbin $BSP_DIR/
+    rm -rf $BSP_DIR/rkbin/.git
+    cp -R $CURR_PATH/$ROOT_DIR/prebuilts $BSP_DIR/
+    rm -rf $BSP_DIR/prebuilts/.git
+
+    tar czf ${BSP_DIR}.bsp.tgz $BSP_DIR
+    generate_md5 ${BSP_DIR}.bsp.tgz
 }
 
 function copy_image_to_storage()
@@ -372,15 +411,17 @@ function copy_image_to_storage()
     echo "[ADV] copy images to $OUTPUT_DIR"
     cd $CURR_PATH
     IMAGE_DIR="${OFFICIAL_VER}"_"$DATE"
-    if [ $isFirstMachine == "true" ]; then
-        generate_manifest
-        mv ${VER_TAG}.xml $OUTPUT_DIR
-    fi
+	BSP_DIR="${BSP_VER}"_"$DATE"
+	if [ $isFirstMachine == "true" ]; then
+	    generate_manifest
+	    mv ${VER_TAG}.xml $OUTPUT_DIR
+	fi
 
     generate_csv ${IMAGE_DIR}.tgz
     mv ${IMAGE_DIR}.csv $OUTPUT_DIR
 
     mv -f ${IMAGE_DIR}.img.tgz $OUTPUT_DIR
+    mv -f ${BSP_DIR}.bsp.tgz $OUTPUT_DIR
     mv -f *.md5 $OUTPUT_DIR
 
 }
@@ -389,16 +430,16 @@ function copy_image_to_storage()
 #  Main procedure 
 # ================
 if [ $isFirstMachine == "true" ]; then
-    get_source_code
+	get_source_code
 fi
 build_linux_images
 prepare_images
 copy_image_to_storage
 save_temp_log
 if [ $isFirstMachine == "true" ]; then
-    uboot_version_commit
-    create_xml_and_commit
-    auto_add_tag
+	uboot_version_commit
+	create_xml_and_commit
+	auto_add_tag
 fi
 
 echo "[ADV] build script done!"

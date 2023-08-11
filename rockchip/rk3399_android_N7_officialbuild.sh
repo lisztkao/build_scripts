@@ -21,7 +21,6 @@ if [ $idx -gt 1 ];then
     isFirstMachine="false"
 fi
 
-RELEASE_VERSION=$1
 echo "[ADV] DATE = ${DATE}"
 echo "[ADV] STORED = ${STORED}"
 echo "[ADV] BSP_URL = ${BSP_URL}"
@@ -243,7 +242,7 @@ function get_source_code()
     echo "[ADV] get android source code"
     cd $CURR_PATH
 
-    git clone https://github.com/rockchip-linux/repo.git
+    git clone https://github.com/ADVANTECH-Rockchip/repo.git
 
     mkdir $ROOT_DIR
     cd $ROOT_DIR

@@ -10,42 +10,34 @@ echo "[ADV] BSP_XML = ${BSP_XML}"
 echo "[ADV] RELEASE_VERSION = ${RELEASE_VERSION}"
 echo "[ADV] MACHINE_LIST= ${MACHINE_LIST}"
 echo "[ADV] BUILD_NUMBER = ${BUILD_NUMBER}"
-#echo "[ADV] SCRIPT_XML = ${SCRIPT_XML}"
-#echo "[ADV] KERNEL_VERSION = ${KERNEL_VERSION}"
-echo "[ADV] KERNEL_URL = ${KERNEL_URL}"
-echo "[ADV] KERNEL_BRANCH = ${KERNEL_BRANCH}"
-echo "[ADV] KERNEL_PATH = ${KERNEL_PATH}"
-#echo "[ADV] UBOOT_VERSION = ${UBOOT_VERSION}"
-echo "[ADV] UBOOT_URL = ${UBOOT_URL}"
-echo "[ADV] UBOOT_BRANCH = ${UBOOT_BRANCH}"
-echo "[ADV] UBOOT_PATH = ${UBOOT_PATH}"
 
-VER_TAG="${VER_PREFIX}AB"$(echo $RELEASE_VERSION | sed 's/[.]//')
+VER_TAG="${VER_PREFIX}ABV"$(echo $RELEASE_VERSION | sed 's/[.]//')
 echo "[ADV] VER_TAG = $VER_TAG"
 
 CURR_PATH="$PWD"
-ROOT_DIR="${VER_PREFIX}AB${RELEASE_VERSION}"_"$DATE"
+ROOT_DIR="${VER_PREFIX}ABV${RELEASE_VERSION}"_"$DATE"
 OUTPUT_DIR="$CURR_PATH/$STORED/$DATE"
 
 #-- Advantech github android source code repository
 echo "[ADV-ROOT]  $ROOT_DIR"
-ANDROID_DEVICE_PATH=$CURR_PATH/$ROOT_DIR/device
-ANDROID_VENDOR_PATH=$CURR_PATH/$ROOT_DIR/vendor
-ANDROID_ART_PATH=$CURR_PATH/$ROOT_DIR/art
-ANDROID_BUILD_PATH=$CURR_PATH/$ROOT_DIR/build
-ANDROID_BOOTABLE_PATH=$CURR_PATH/$ROOT_DIR/bootable
-ANDROID_DEVELOPMENT_PATH=$CURR_PATH/$ROOT_DIR/development
-ANDROID_EXTERNAL_PATH=$CURR_PATH/$ROOT_DIR/external
-ANDROID_FRAMEWORKS_PATH=$CURR_PATH/$ROOT_DIR/frameworks
-ANDROID_HARDWARE_PATH=$CURR_PATH/$ROOT_DIR/hardware
-ANDROID_PACKAGES_PATH=$CURR_PATH/$ROOT_DIR/packages
-ANDROID_SYSTEM_PATH=$CURR_PATH/$ROOT_DIR/system
-ANDROID_BUILD_URL=${ANDROID_BUILD_URL}
+ANDROID_KERNEL_PATH=$CURR_PATH/$ROOT_DIR/android/vendor/nxp-opensource/kernel_imx
+ANDROID_UBOOT_PATH=$CURR_PATH/$ROOT_DIR/android/vendor/nxp-opensource/uboot-imx
+ANDROID_BSP_PATH=$CURR_PATH/$ROOT_DIR/android
+ANDROID_CTS_PATH=$CURR_PATH/$ROOT_DIR/android/cts
+ANDROID_DEVELOPMENT_PATH=$CURR_PATH/$ROOT_DIR/android/development
+ANDROID_DEVICE_PATH=$CURR_PATH/$ROOT_DIR/android/device
+ANDROID_EXTERNAL_PATH=$CURR_PATH/$ROOT_DIR/android/external
+ANDROID_FRAMEWORKS_PATH=$CURR_PATH/$ROOT_DIR/android/frameworks
+ANDROID_PACKAGES_PATH=$CURR_PATH/$ROOT_DIR/android/packages
+ANDROID_SYSTEM_PATH=$CURR_PATH/$ROOT_DIR/android/system
+ANDROID_TEST_PATH=$CURR_PATH/$ROOT_DIR/android/test
+ANDROID_TOOLS_PATH=$CURR_PATH/$ROOT_DIR/android/tools
+ANDROID_VENDOR_PATH=$CURR_PATH/$ROOT_DIR/android/vendor
 
 #======================
 AND_BSP="android"
-AND_BSP_VER="9.0.0"
-AND_VERSION="android_p9.0.0_2.2.0"
+AND_BSP_VER="11.0.0"
+AND_VERSION="android_11.0.0_2.6.0"
 
 #======================
 
@@ -78,8 +70,10 @@ function get_source_code()
 	   ../repo init -u $BSP_URL -b $BSP_BRANCH -m $BSP_XML
 	fi
 	../repo sync -j8
-
+    
 	cd $CURR_PATH
+	
+	tar zxvf prebuilts-imx8-android11*.tar.gz -C $CURR_PATH/$ROOT_DIR/android
 }
 
 function check_tag_and_checkout()
@@ -226,26 +220,25 @@ function generate_csv()
 	fi
 
 	HASH_BSP=$(cd $CURR_PATH/$ROOT_DIR/.repo/manifests && git rev-parse --short HEAD)
-	HASH_UBOOT=$(cd $CURR_PATH/$ROOT_DIR/vendor/nxp-opensource/uboot-imx && git rev-parse --short HEAD)
-	HASH_KERNEL=$(cd $CURR_PATH/$ROOT_DIR/vendor/nxp-opensource/kernel_imx && git rev-parse --short HEAD)
-	HASH_PATCH=$(cd $CURR_PATH/$ROOT_DIR/patches_android_9.0.0_r35 && git rev-parse --short HEAD)
-	HASH_DEVICE=$(cd $CURR_PATH/$ROOT_DIR/device && git rev-parse --short HEAD)
-	HASH_VENDOR=$(cd $CURR_PATH/$ROOT_DIR/vendor && git rev-parse --short HEAD)
-	HASH_ART=$(cd $CURR_PATH/$ROOT_DIR/art && git rev-parse --short HEAD)
-	HASH_BUILD=$(cd $CURR_PATH/$ROOT_DIR/build && git rev-parse --short HEAD)
-	HASH_BOOTABLE=$(cd $CURR_PATH/$ROOT_DIR/bootable && git rev-parse --short HEAD)
-	HASH_DEVELOPMENT=$(cd $CURR_PATH/$ROOT_DIR/development && git rev-parse --short HEAD)
-	HASH_EXTERNAL=$(cd $CURR_PATH/$ROOT_DIR/external && git rev-parse --short HEAD)
-	HASH_FRAMEWORKS=$(cd $CURR_PATH/$ROOT_DIR/frameworks && git rev-parse --short HEAD)
-	HASH_HARDWARE=$(cd $CURR_PATH/$ROOT_DIR/hardware && git rev-parse --short HEAD)
-	HASH_PACKAGES=$(cd $CURR_PATH/$ROOT_DIR/packages && git rev-parse --short HEAD)
-	HASH_SYSTEM=$(cd $CURR_PATH/$ROOT_DIR/system && git rev-parse --short HEAD)
+	HASH_UBOOT=$(cd $CURR_PATH/$ROOT_DIR/android/vendor/nxp-opensource/uboot-imx && git rev-parse --short HEAD)
+	HASH_KERNEL=$(cd $CURR_PATH/$ROOT_DIR/android/vendor/nxp-opensource/kernel_imx && git rev-parse --short HEAD)
+	HASH_ANDROID_BSP=$(cd $CURR_PATH/$ROOT_DIR/android && git rev-parse --short HEAD)
+	HASH_CTS=$(cd $CURR_PATH/$ROOT_DIR/android/cts && git rev-parse --short HEAD)
+	HASH_DEVELOPMENT=$(cd $CURR_PATH/$ROOT_DIR/android/development && git rev-parse --short HEAD)
+	HASH_DEVICE=$(cd $CURR_PATH/$ROOT_DIR/android/device && git rev-parse --short HEAD)
+	HASH_EXTERNAL=$(cd $CURR_PATH/$ROOT_DIR/android/external && git rev-parse --short HEAD)
+	HASH_FRAMEWORKS=$(cd $CURR_PATH/$ROOT_DIR/android/frameworks && git rev-parse --short HEAD)
+	HASH_PACKAGES=$(cd $CURR_PATH/$ROOT_DIR/android/packages && git rev-parse --short HEAD)
+	HASH_SYSTEM=$(cd $CURR_PATH/$ROOT_DIR/android/system && git rev-parse --short HEAD)
+	HASH_TEST=$(cd $CURR_PATH/$ROOT_DIR/android/test && git rev-parse --short HEAD)
+	HASH_TOOLS=$(cd $CURR_PATH/$ROOT_DIR/android/tools && git rev-parse --short HEAD)
+	HASH_VENDOR=$(cd $CURR_PATH/$ROOT_DIR/android/vendor && git rev-parse --short HEAD)
 
 	cd $CURR_PATH
 
     cat > ${FILENAME%.*}.csv << END_OF_CSV
 ESSD Software/OS Update News
-OS,Android 9.0.0
+OS,Android 11.0.0
 Part Number,N/A
 Author,
 Date,${DATE}
@@ -259,18 +252,16 @@ Function Addition,
 Android-manifest, ${HASH_BSP}
 Andorid-UBOOT, ${HASH_UBOOT}
 Andorid-KERNEL, ${HASH_KERNEL}
-Andorid-DEVICE, ${HASH_DEVICE}
-Andorid-VENDOR, ${HASH_VENDOR}
-Andorid-ART, ${HASH_ART}
-Andorid-BUILD, ${HASH_BUILD}
-Andorid-BOOTABLE, ${HASH_BOOTABLE}
+Andorid-BSP, ${HASH_ANDROID_BSP}
 Andorid-DEVELOPMENT, ${HASH_DEVELOPMENT}
+Andorid-DEVICE, ${HASH_DEVICE}
 Andorid-EXTERNAL, ${HASH_EXTERNAL}
 Andorid-FRAMEWORKS, ${HASH_FRAMEWORKS}
-Andorid-HARDWARE, ${HASH_HARDWARE}
 Andorid-PACKAGES, ${HASH_PACKAGES}
 Andorid-SYSTEM, ${HASH_SYSTEM}
-Andorid-ANDROID-PATCH, ${HASH_PATCH}
+Andorid-TEST, ${HASH_TEST}
+Andorid-TOOLS, ${HASH_TOOLS}
+Andorid-VENDOR, ${HASH_VENDOR}
 END_OF_CSV
 }
 
@@ -279,7 +270,7 @@ function save_temp_log()
 	LOG_PATH="$CURR_PATH/$ROOT_DIR"
 	cd $LOG_PATH
 
-	LOG_DIR="AI${RELEASE_VERSION}"_"$NEW_MACHINE"_"$DATE"_log
+	LOG_DIR="AIV${RELEASE_VERSION}"_"$NEW_MACHINE"_"$DATE"_log
 	echo "[ADV] mkdir $LOG_DIR"
 	mkdir $LOG_DIR
 
@@ -305,37 +296,24 @@ function building()
 	LOG3_FILE="$NEW_MACHINE"_Build3.log
 
 	if [ "$1" == "android" ]; then
-		#make -j4 droid otapackage 2>> $CURR_PATH/$ROOT_DIR/$LOG_FILE
-		make -j8 bootloader 2>> $CURR_PATH/$ROOT_DIR/$LOG_FILE
-		make -j8 bootimage 2>> $CURR_PATH/$ROOT_DIR/$LOG2_FILE
-		make dtboimage -j8 2>> $CURR_PATH/$ROOT_DIR/$LOG_FILE
-		make -j8 2>> $CURR_PATH/$ROOT_DIR/$LOG3_FILE
+		./imx-make.sh bootloader -j12 2>> $CURR_PATH/$ROOT_DIR/$LOG_FILE
+		./imx-make.sh kernel -j12 2>> $CURR_PATH/$ROOT_DIR/$LOG2_FILE
+		./imx-make.sh -j12 2>> $CURR_PATH/$ROOT_DIR/$LOG3_FILE
 	else
 		make -j8 $1 2>> $CURR_PATH/$ROOT_DIR/$LOG_FILE
 	fi
 	[ "$?" -ne 0 ] && echo "[ADV] Build failure! Check log file '$LOG_FILE'" && exit 1
 }
 
-function patches_android_code()
-{
-	echo "[ADV] patches_android_Uboot_code [STEP1]"
-	cd $CURR_PATH/$ROOT_DIR/vendor/nxp-opensource/uboot-imx
-	patch -p1 <../../../patches_android_9.0.0_r35/9001-Uboot_Yocto_4.14.98_2.0.0-to-android-9.0.0_r35.patch
-
-	echo "[ADV] patches_android_Kernel_code"
-	cd $CURR_PATH/$ROOT_DIR/vendor/nxp-opensource/kernel_imx
-	patch -p1 <../../../patches_android_9.0.0_r35/9001-Linux_Yocto_4.14.98_2.0.0-to-android-9.0.0_r35.patch
-
-	cd $CURR_PATH/$ROOT_DIR/device
-	git checkout -b android-9.0.0_r35 remotes/advantech-github/android-9.0.0_r35
-}
-
 function set_environment()
 {
 	echo "[ADV] set environment"
 
-	cd $CURR_PATH/$ROOT_DIR
+	sudo git clone https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 $CURR_PATH/$ROOT_DIR/prebuilt-android-clang -b master-kernel-build-2021
+	cd $CURR_PATH/$ROOT_DIR/android
 	export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
+	export AARCH64_GCC_CROSS_COMPILE=/opt/gcc-arm-8.3-2019.03-x86_64-aarch64-linux-gnu/bin/aarch64-linux-gnu-
+	export CLANG_PATH=$CURR_PATH/$ROOT_DIR/prebuilt-android-clang
 	source build/envsetup.sh
 
 	if [ "$1" == "sdk" ]; then
@@ -351,7 +329,7 @@ function set_environment()
 
 function build_android_images()
 {
-	cd $CURR_PATH/$ROOT_DIR
+	cd $CURR_PATH/$ROOT_DIR/android
 	set_environment
 	# Android & OTA images
 	building android
@@ -362,31 +340,30 @@ function prepare_images()
 {
 	cd $CURR_PATH
 
-	IMAGE_DIR="AI${RELEASE_VERSION}"_"$NEW_MACHINE"_"$DATE"
+	IMAGE_DIR="AIV${RELEASE_VERSION}"_"$NEW_MACHINE"_"$DATE"
 	echo "[ADV] mkdir $IMAGE_DIR"
 	mkdir $IMAGE_DIR
 	mkdir $IMAGE_DIR/image
 
 	# Copy image files to image directory
-	if [ "${SOC_NAME}" == "imx6q" ]; then
-		cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/obj/UBOOT_OBJ/u-boot_crc.bin $IMAGE_DIR/image
-		cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/obj/UBOOT_OBJ/u-boot_crc.bin.crc $IMAGE_DIR/image
-	else
-		cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/u-boot-$SOC_NAME.imx $IMAGE_DIR/image
-		cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/u-boot-$SOC_NAME-evk-uuu.imx $IMAGE_DIR/image
-	fi
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/boot.img $IMAGE_DIR/image
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/partition-table.img $IMAGE_DIR/image
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/partition-table-28GB.img $IMAGE_DIR/image
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/partition-table-7GB.img $IMAGE_DIR/image
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/system.img $IMAGE_DIR/image
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/vendor.img $IMAGE_DIR/image
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/fsl-sdcard-partition.sh $IMAGE_DIR/imagei
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/fastboot_imx_flashall.sh $IMAGE_DIR/image
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/uuu_imx_android_flash.sh $IMAGE_DIR/image
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/dtbo-$SOC_NAME.img $IMAGE_DIR/image
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/recovery-$SOC_NAME.img $IMAGE_DIR/image
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/vbmeta-$SOC_NAME.img $IMAGE_DIR/image
+
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/u-boot-$SOC_NAME.imx $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/u-boot-$SOC_NAME-evk-uuu.imx $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/boot.img $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/partition-table.img $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/partition-table-28GB.img $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/super.img $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/vendor.img $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/vendor_boot.img $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/imx-sdcard-partition.sh $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/fastboot_imx_flashall.sh $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/fastboot_imx_flashall.bat $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/uuu_imx_android_flash.sh $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/uuu_imx_android_flash.bat $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/dtbo-$SOC_NAME.img $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/vendor.img $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/vbmeta-$SOC_NAME.img $IMAGE_DIR/image
+	cp -a $CURR_PATH/$ROOT_DIR/android/out/target/product/$NEW_MACHINE/vbmeta.img $IMAGE_DIR/image
 
 	cp -a /usr/bin/simg2img $IMAGE_DIR/image
 
@@ -414,41 +391,40 @@ get_source_code
 echo "[ADV] check_tag_and_checkout"
 
 # Check ADVANTECH android source code tag exist or not, and checkout to tag version
-check_tag_and_checkout $ANDROID_DEVICE_PATH
-check_tag_and_checkout $ANDROID_VENDOR_PATH
-check_tag_and_checkout $ANDROID_ART_PATH
-check_tag_and_checkout $ANDROID_BUILD_PATH
-check_tag_and_checkout $ANDROID_BOOTABLE_PATH
+check_tag_and_checkout $ANDROID_KERNEL_PATH
+check_tag_and_checkout $ANDROID_UBOOT_PATH
+check_tag_and_checkout $ANDROID_BSP_PATH
+check_tag_and_checkout $ANDROID_CTS_PATH
 check_tag_and_checkout $ANDROID_DEVELOPMENT_PATH
+check_tag_and_checkout $ANDROID_DEVICE_PATH
 check_tag_and_checkout $ANDROID_EXTERNAL_PATH
 check_tag_and_checkout $ANDROID_FRAMEWORKS_PATH
-check_tag_and_checkout $ANDROID_HARDWARE_PATH
 check_tag_and_checkout $ANDROID_PACKAGES_PATH
 check_tag_and_checkout $ANDROID_SYSTEM_PATH
+check_tag_and_checkout $ANDROID_TEST_PATH
+check_tag_and_checkout $ANDROID_TOOLS_PATH
+check_tag_and_checkout $ANDROID_VENDOR_PATH
 
 # Add git tag
 echo "[ADV] Add tag"
-auto_add_tag $CURR_PATH/$ROOT_DIR/$UBOOT_PATH
-auto_add_tag $CURR_PATH/$ROOT_DIR/$KERNEL_PATH
-auto_add_tag $ANDROID_DEVICE_PATH
-auto_add_tag $ANDROID_VENDOR_PATH
-auto_add_tag $ANDROID_ART_PATH
-auto_add_tag $ANDROID_BUILD_PATH
-auto_add_tag $ANDROID_BOOTABLE_PATH
+auto_add_tag $ANDROID_KERNEL_PATH
+auto_add_tag $ANDROID_UBOOT_PATH
+auto_add_tag $ANDROID_BSP_PATH
+auto_add_tag $ANDROID_CTS_PATH
 auto_add_tag $ANDROID_DEVELOPMENT_PATH
+auto_add_tag $ANDROID_DEVICE_PATH
 auto_add_tag $ANDROID_EXTERNAL_PATH
 auto_add_tag $ANDROID_FRAMEWORKS_PATH
-auto_add_tag $ANDROID_HARDWARE_PATH
 auto_add_tag $ANDROID_PACKAGES_PATH
 auto_add_tag $ANDROID_SYSTEM_PATH
+auto_add_tag $ANDROID_TEST_PATH
+auto_add_tag $ANDROID_TOOLS_PATH
+auto_add_tag $ANDROID_VENDOR_PATH
 
 # ------------REMOVE FOR TEST   ------------- #
 # Create manifests xml and commit
 echo "[ADV] create_xml_and_commit"
 create_xml_and_commit
-
-# echo "[ADV] patches android source code"
-# patches_android_code
 
 echo "[ADV] build images"
 for NEW_MACHINE in $MACHINE_LIST
