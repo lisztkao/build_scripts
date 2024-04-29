@@ -29,6 +29,12 @@ function get_source_code()
 	popd
 }
 
+function get_downloads()
+{
+	echo "[ADV] get yocto downloads"
+	sudo mv $CURR_PATH/downloads $CURR_PATH/$ROOT_DIR/amss/LE.PRODUCT.2.1.r1/apps_proc/downloads
+}
+
 function build_image()
 {
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
