@@ -10,25 +10,18 @@ echo "[ADV] BSP_XML = ${BSP_XML}"
 echo "[ADV] RELEASE_VERSION = ${RELEASE_VERSION}"
 echo "[ADV] MACHINE_LIST= ${MACHINE_LIST}"
 echo "[ADV] BUILD_NUMBER = ${BUILD_NUMBER}"
-#echo "[ADV] SCRIPT_XML = ${SCRIPT_XML}"
-#echo "[ADV] KERNEL_VERSION = ${KERNEL_VERSION}"
-echo "[ADV] KERNEL_URL = ${KERNEL_URL}"
-echo "[ADV] KERNEL_BRANCH = ${KERNEL_BRANCH}"
-echo "[ADV] KERNEL_PATH = ${KERNEL_PATH}"
-#echo "[ADV] UBOOT_VERSION = ${UBOOT_VERSION}"
-echo "[ADV] UBOOT_URL = ${UBOOT_URL}"
-echo "[ADV] UBOOT_BRANCH = ${UBOOT_BRANCH}"
-echo "[ADV] UBOOT_PATH = ${UBOOT_PATH}"
 
-VER_TAG="${VER_PREFIX}AB"$(echo $RELEASE_VERSION | sed 's/[.]//')
+VER_TAG="${VER_PREFIX}ABV"$(echo $RELEASE_VERSION | sed 's/[.]//')
 echo "[ADV] VER_TAG = $VER_TAG"
 
 CURR_PATH="$PWD"
-ROOT_DIR="${VER_PREFIX}AB${RELEASE_VERSION}"_"$DATE"
-OUTPUT_DIR="$CURR_PATH/$STORED/$DATE"
+ROOT_DIR="${VER_PREFIX}ABV${RELEASE_VERSION}"_"$DATE"
+OUTPUT_DIR="$CURR_PATH/$STORED/$DATE/V"$(echo $RELEASE_VERSION | sed 's/[.]//')
 
 #-- Advantech github android source code repository
 echo "[ADV-ROOT]  $ROOT_DIR"
+ANDROID_KERNEL_PATH=$CURR_PATH/$ROOT_DIR/vendor/nxp-opensource/kernel_imx
+ANDROID_UBOOT_PATH=$CURR_PATH/$ROOT_DIR/vendor/nxp-opensource/uboot-imx
 ANDROID_DEVICE_PATH=$CURR_PATH/$ROOT_DIR/device
 ANDROID_VENDOR_PATH=$CURR_PATH/$ROOT_DIR/vendor
 ANDROID_ART_PATH=$CURR_PATH/$ROOT_DIR/art
@@ -40,7 +33,6 @@ ANDROID_FRAMEWORKS_PATH=$CURR_PATH/$ROOT_DIR/frameworks
 ANDROID_HARDWARE_PATH=$CURR_PATH/$ROOT_DIR/hardware
 ANDROID_PACKAGES_PATH=$CURR_PATH/$ROOT_DIR/packages
 ANDROID_SYSTEM_PATH=$CURR_PATH/$ROOT_DIR/system
-ANDROID_BUILD_URL=${ANDROID_BUILD_URL}
 
 #======================
 AND_BSP="android"
@@ -55,6 +47,20 @@ if [ -e $OUTPUT_DIR ] ; then
 else
 	echo "[ADV] mkdir $OUTPUT_DIR"
 	mkdir -p $OUTPUT_DIR
+fi
+
+if [ -e $OUTPUT_DIR/${MODEL_NAME}/image ] ; then
+    echo "[ADV] $OUTPUT_DIR/${MODEL_NAME}/image  had already been created"
+else
+    echo "[ADV] mkdir $OUTPUT_DIR/${MODEL_NAME}/image"
+    mkdir -p $OUTPUT_DIR/${MODEL_NAME}/image
+fi
+
+if [ -e $OUTPUT_DIR/${MODEL_NAME}/others ] ; then
+    echo "[ADV] $OUTPUT_DIR/${MODEL_NAME}/others  had already been created"
+else
+    echo "[ADV] mkdir $OUTPUT_DIR/${MODEL_NAME}/others"
+    mkdir -p $OUTPUT_DIR/${MODEL_NAME}/others
 fi
 
 # ===========
@@ -279,7 +285,7 @@ function save_temp_log()
 	LOG_PATH="$CURR_PATH/$ROOT_DIR"
 	cd $LOG_PATH
 
-	LOG_DIR="AI${RELEASE_VERSION}"_"$NEW_MACHINE"_"$DATE"_log
+	LOG_DIR="AIV${RELEASE_VERSION}"_"$NEW_MACHINE"_"$DATE"_log
 	echo "[ADV] mkdir $LOG_DIR"
 	mkdir $LOG_DIR
 
@@ -290,9 +296,8 @@ function save_temp_log()
 	tar czf $LOG_DIR.tgz $LOG_DIR
 	generate_md5 $LOG_DIR.tgz
 
-	mv -f $LOG_DIR.tgz $OUTPUT_DIR
-	mv -f $LOG_DIR.tgz.md5 $OUTPUT_DIR
-
+    mv -f $LOG_DIR.tgz $OUTPUT_DIR/${MODEL_NAME}/others
+    mv -f $LOG_DIR.tgz.md5 $OUTPUT_DIR/${MODEL_NAME}/others
 	# Remove all temp logs
 	rm -rf $LOG_DIR
 }
@@ -362,7 +367,7 @@ function prepare_images()
 {
 	cd $CURR_PATH
 
-	IMAGE_DIR="AI${RELEASE_VERSION}"_"$NEW_MACHINE"_"$DATE"
+	IMAGE_DIR="AIV${RELEASE_VERSION}"_"$NEW_MACHINE"_"$DATE"
 	echo "[ADV] mkdir $IMAGE_DIR"
 	mkdir $IMAGE_DIR
 	mkdir $IMAGE_DIR/image
@@ -381,7 +386,7 @@ function prepare_images()
 	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/partition-table-7GB.img $IMAGE_DIR/image
 	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/system.img $IMAGE_DIR/image
 	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/vendor.img $IMAGE_DIR/image
-	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/fsl-sdcard-partition.sh $IMAGE_DIR/imagei
+	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/fsl-sdcard-partition.sh $IMAGE_DIR/image
 	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/fastboot_imx_flashall.sh $IMAGE_DIR/image
 	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/uuu_imx_android_flash.sh $IMAGE_DIR/image
 	cp -a $CURR_PATH/$ROOT_DIR/out/target/product/$NEW_MACHINE/dtbo-$SOC_NAME.img $IMAGE_DIR/image
@@ -399,9 +404,9 @@ function copy_image_to_storage()
 {
 	echo "[ADV] copy images to $OUTPUT_DIR"
 	generate_csv ${IMAGE_DIR}.tar.gz
-	mv ${IMAGE_DIR}.csv $OUTPUT_DIR
-	mv -f ${IMAGE_DIR}.tar.gz $OUTPUT_DIR
-	mv -f *.md5 $OUTPUT_DIR
+	mv ${IMAGE_DIR}.csv $OUTPUT_DIR/${MODEL_NAME}/others
+    mv -f ${IMAGE_DIR}.tar.gz $OUTPUT_DIR/${MODEL_NAME}/image
+    mv -f ${IMAGE_DIR}.tar.gz.md5 $OUTPUT_DIR/${MODEL_NAME}/image
 }
 
 # ================
@@ -414,6 +419,8 @@ get_source_code
 echo "[ADV] check_tag_and_checkout"
 
 # Check ADVANTECH android source code tag exist or not, and checkout to tag version
+check_tag_and_checkout $ANDROID_KERNEL_PATH
+check_tag_and_checkout $ANDROID_UBOOT_PATH
 check_tag_and_checkout $ANDROID_DEVICE_PATH
 check_tag_and_checkout $ANDROID_VENDOR_PATH
 check_tag_and_checkout $ANDROID_ART_PATH
@@ -428,8 +435,8 @@ check_tag_and_checkout $ANDROID_SYSTEM_PATH
 
 # Add git tag
 echo "[ADV] Add tag"
-auto_add_tag $CURR_PATH/$ROOT_DIR/$UBOOT_PATH
-auto_add_tag $CURR_PATH/$ROOT_DIR/$KERNEL_PATH
+auto_add_tag $ANDROID_KERNEL_PATH
+auto_add_tag $ANDROID_UBOOT_PATH
 auto_add_tag $ANDROID_DEVICE_PATH
 auto_add_tag $ANDROID_VENDOR_PATH
 auto_add_tag $ANDROID_ART_PATH

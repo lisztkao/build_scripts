@@ -88,6 +88,11 @@ function define_cpu_type()
                         KERNEL_CPU_TYPE="imx8qm"
                         CPU_TYPE="iMX8QM"
                         ;;
+		"8U")
+			PRODUCT=`expr $1 : '\(.*\).*-'`
+			KERNEL_CPU_TYPE="imx8ulp"
+			CPU_TYPE="iMX8ULP"
+			;;
                 *)
                         # Do nothing
                         ;;
@@ -213,10 +218,9 @@ function add_version()
 	# Set U-boot version
 	sed -i "/UBOOT_LOCALVERSION/d" $ROOT_DIR/$U_BOOT_PATH
 	echo "UBOOT_LOCALVERSION = \"-$OFFICIAL_VER\"" >> $ROOT_DIR/$U_BOOT_PATH
-	
-	# Set Linux version
-	sed -i "/LOCALVERSION/d" $ROOT_DIR/$KERNEL_PATH
-	echo "LOCALVERSION = \"-$OFFICIAL_VER\"" >> $ROOT_DIR/$KERNEL_PATH
+
+	# Set Linux version (replace)
+	sed -i "0,/LOCALVERSION/ s/LOCALVERSION = .*/LOCALVERSION = \"-$OFFICIAL_VER\"/g" $ROOT_DIR/$KERNEL_PATH
 }
 
 function building()
@@ -256,7 +260,7 @@ function set_environment()
 		EULA=1 source setup-environment $BUILDALL_DIR
 	else
 		# First build
-		EULA=1 DISTRO=$BACKEND_TYPE MACHINE=${KERNEL_CPU_TYPE}${PRODUCT} source imx-setup-release.sh -b $BUILDALL_DIR
+		EULA=1 DISTRO=$BACKEND_TYPE MACHINE=${KERNEL_CPU_TYPE}${PRODUCT} UBOOT_CONFIG=${PRE_MEMORY} source imx-setup-release.sh -b $BUILDALL_DIR
 	fi
 }
 
@@ -264,7 +268,7 @@ function clean_yocto_packages()
 {
         echo "[ADV] build_yocto_image: clean for virtual_libg2d"
         PACKAGE_LIST=" \
-		imx-qtapplications gstreamer1.0-rtsp-server gst-examples freerdp \
+		gstreamer1.0-rtsp-server gst-examples freerdp \
 		imx-gpu-apitrace gstreamer1.0-plugins-good gstreamer1.0-plugins-base \
 		gstreamer1.0-plugins-bad kmscube imx-gpu-sdk opencv imx-gst1.0-plugin \
 		weston "
@@ -275,10 +279,10 @@ function clean_yocto_packages()
 
         echo "[ADV] build_yocto_image: clean for qt5"
         PACKAGE_LIST=" \
-		qtbase-native qtbase qtdeclarative qtxmlpatterns qtwayland qtmultimedia \
-		qt3d qtgraphicaleffects qt5nmapcarousedemo qt5everywheredemo quitbattery \
-		qtsmarthome qtsensors cinematicexperience qt5nmapper quitindicators qtlocation \
-		qtwebkit qtwebengine chromium-ozone-wayland "
+		qtbase-native qtbase qtdeclarative-native qtdeclarative qtwayland-native \
+		qtwayland qt3d qt5compat qtquick3d-native qtquick3d qtshadertools-native \
+		qtshadertools qtlanguageserver-native qtlanguageserver qtconnectivity \
+		qtquicktimeline qtsvg "
         for PACKAGE in ${PACKAGE_LIST}
         do
                 building ${PACKAGE} cleansstate
@@ -287,8 +291,7 @@ function clean_yocto_packages()
 	echo "[ADV] build_yocto_image: clean for other packages"
 	building spirv-tools cleansstate
 	building fmt cleansstate
-	building armnn	cleansstate
-	if [ "$BUILD_NN_IMX_CLEANSTATE" == "true" ] ; then
+	if [ "$PRODUCT" == "rom7720a1" ] || [ "$PRODUCT" == "rom5620a1" ] || [ "$PRODUCT" == "rom3620a1" ] || [ "$PRODUCT" == "rom5722a1" ] || [ "$PRODUCT" == "rsb3720a2" ]; then
                 building nn-imx cleansstate
         fi
 }
@@ -298,15 +301,13 @@ function rebuild_bootloader()
         #rebuild bootloader
 	BOOTLOADER_TYPE=$1 
         case $BOOTLOADER_TYPE in
-                "512M" | "1G" | "2G" | "4G" | "6G" | "8G")
+                "512M" | "1G" | "2G" | "4G" | "6G")
 			echo "[ADV] Rebuild image for $BOOTLOADER_TYPE"
 			echo "UBOOT_CONFIG = \"$BOOTLOADER_TYPE\"" >> $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/conf/local.conf
 			building imx-atf cleansstate
 			building optee-os cleansstate
 			building imx-boot clean
-			building initramfs-debug-image clean
 			building $DEPLOY_IMAGE_NAME clean
-			building initramfs-debug-image 
 			building $DEPLOY_IMAGE_NAME 
 			;;
                 *)
@@ -322,9 +323,6 @@ function rebuild_bootloader()
 
 function build_yocto_images()
 {
-	# Modify the nxp build fail issue#
-	sed -i 's/git.alsa-project.org/github.com\/alsa-project/g' $CURR_PATH/$ROOT_DIR/sources/meta-imx/meta-sdk/recipes-multimedia/tinycompress/tinycompress_1.1.6.bb
-
         set_environment
 
         # Re-build U-Boot & kernel
@@ -338,9 +336,6 @@ function build_yocto_images()
 
         # Clean package to avoid build error
 	clean_yocto_packages
-
-        echo "[ADV] Build recovery image!"
-        building initramfs-debug-image
 
 	# Build full image
         building $DEPLOY_IMAGE_NAME
@@ -382,10 +377,10 @@ function prepare_images()
                         cp $DEPLOY_MODULES_PATH/$FILE_NAME $OUTPUT_DIR
                         ;;
                 "normal")
-                        FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.sdcard"
-                        bunzip2 -f $DEPLOY_IMAGE_PATH/$FILE_NAME.bz2
+                        FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.wic"
+                        unzstd -f $DEPLOY_IMAGE_PATH/$FILE_NAME.zst
                         cp $DEPLOY_IMAGE_PATH/$FILE_NAME $OUTPUT_DIR
-			;;
+                        ;;
                 "individually")
                         mkdir $OUTPUT_DIR/image $OUTPUT_DIR/mk_inand
                         sudo cp $CURR_PATH/individually-script-tool/* $OUTPUT_DIR/mk_inand/
@@ -400,7 +395,7 @@ function prepare_images()
                 "flash")
                         mkdir $OUTPUT_DIR/image $OUTPUT_DIR/mk_inand
                         # normal image
-                        FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.sdcard"
+                        FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.wic"
                         cp $DEPLOY_IMAGE_PATH/$FILE_NAME $OUTPUT_DIR/image
                         chmod 755 $CURR_PATH/mksd-linux.sh
                         sudo cp $CURR_PATH/mksd-linux.sh $OUTPUT_DIR/mk_inand/
@@ -423,27 +418,9 @@ function prepare_images()
                         echo "[ADV] creating ${OUTPUT_DIR}.img.gz ..."
                         gzip -c9 $OUTPUT_DIR/$FILE_NAME > $OUTPUT_DIR.img.gz
                         generate_md5 $OUTPUT_DIR.img.gz
-			;;
+                        ;;
         esac
         rm -rf $OUTPUT_DIR
-}
-
-function generate_OTA_update_package()
-{
-        echo "[ADV] generate OTA update package"
-        cp ota-package.sh $DEPLOY_IMAGE_PATH
-        cd $DEPLOY_IMAGE_PATH
-
-        echo "[ADV] creating update_$1_kernel.zip for OTA package ..."
-        HW_VER=$((${#PRODUCT}-2))
-        DTB_FILE=`ls ${KERNEL_CPU_TYPE}-${PRODUCT:0:$HW_VER}-${PRODUCT:$HW_VER:2}.dtb`
-        ./ota-package.sh -k Image -d ${DTB_FILE} -m modules-${KERNEL_CPU_TYPE}${PRODUCT}.tgz -o update_$1_kernel
-
-        echo "[ADV] creating update_$1_rootfs.zip for OTA package ..."
-        ./ota-package.sh -r $DEPLOY_IMAGE_NAME-${KERNEL_CPU_TYPE}${PRODUCT}.ext4 -o update_$1_rootfs
-
-        mv update*.zip $CURR_PATH
-        cd $CURR_PATH
 }
 
 function copy_image_to_storage()
@@ -473,9 +450,6 @@ function copy_image_to_storage()
 			generate_csv $IMAGE_DIR.img.gz
 			mv ${IMAGE_DIR}.img.csv $STORAGE_PATH
 			mv -f $IMAGE_DIR.img.gz $STORAGE_PATH
-		;;
-		"ota")
-			mv -f update*.zip $STORAGE_PATH
 		;;
 		*)
 		echo "[ADV] copy_image_to_storage: invalid parameter #1!"
@@ -507,17 +481,24 @@ else #"$PRODUCT" != "$VER_PREFIX"
                 echo -e "No BSP is found!\nStop building." && exit 1
         fi
 
+        if [ -e $CURR_PATH/downloads ] ; then
+                echo "[ADV] link downloads directory from backup"
+                ln -s $CURR_PATH/downloads $CURR_PATH/$ROOT_DIR/downloads
+        fi
+
         echo "[ADV] add version"
         add_version
 
-	echo "[ADV] build images"
-        build_yocto_images
-
 	for MEMORY in $MEMORY_LIST;do
-		if [ "$PRE_MEMORY" != "" ]; then
-			rebuild_bootloader $MEMORY
-		fi
-		PRE_MEMORY=$MEMORY
+                if [ "$PRE_MEMORY" != "" ]; then
+                        PRE_MEMORY=$MEMORY
+                        rebuild_bootloader $PRE_MEMORY
+                else
+                        PRE_MEMORY=$MEMORY
+                        echo "[ADV] build images"
+                        build_yocto_images
+                fi
+
 		echo "[ADV] generate normal image"
 		DEPLOY_IMAGE_PATH="$CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/deploy/images/${KERNEL_CPU_TYPE}${PRODUCT}"
 		IMAGE_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$MEMORY"_"$DATE"
@@ -557,11 +538,6 @@ else #"$PRODUCT" != "$VER_PREFIX"
 	MODULES_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_modules
 	prepare_images modules $MODULES_DIR
 	copy_image_to_storage modules
-
-        echo "[ADV] generate ota packages"
-	OTA_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$DATE"
-        generate_OTA_update_package $OTA_DIR
-        copy_image_to_storage ota
 
         save_temp_log
 fi

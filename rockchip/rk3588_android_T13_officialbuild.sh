@@ -2,7 +2,7 @@
 
 ADV_PATH="\
 u-boot \
-kernel-4.19 \
+kernel-5.10 \
 . \
 external \
 external/camera_engine_rkaiq \
@@ -17,7 +17,10 @@ external/tensorflow \
 external/cldr \
 external/chromium-webview \
 external/llvm \
-external/llvm-project \
+external/exoplayer \
+external/angle \
+external/autotest \
+external/rust \
 cts \
 test \
 tools \
@@ -26,10 +29,11 @@ system \
 device \
 frameworks \
 packages \
+hardware \
 vendor \
 "
 
-VER_PREFIX="RK3568_S12_"
+VER_PREFIX="RK3588_T13_"
 
 idx=0
 isFirstMachine="true"
@@ -65,7 +69,7 @@ ROOT_DIR="${VER_TAG}"_"$DATE"
 SUB_DIR="android"
 OUTPUT_DIR="$CURR_PATH/$STORED/$DATE/V"$(echo $RELEASE_VERSION | sed 's/[.]//')
 
-#-- Advantech/rk3568 azure android source code repository
+#-- Advantech/RK3588 azure android source code repository
 echo "[ADV-ROOT]  $ROOT_DIR"
 for TEMP_PATH in ${ADV_PATH}
 do
@@ -74,8 +78,8 @@ done
 #--------------------------------------------------
 #======================
 AND_BSP="android"
-AND_BSP_VER="12.0"
-AND_VERSION="android_S12.0"
+AND_BSP_VER="13.0"
+AND_VERSION="android_T13.0"
 
 #======================
 
@@ -307,7 +311,9 @@ function get_source_code()
 
     cd $CURR_PATH
 
-    tar zxvf prebuilts-rk3399-AndroidS12*.tar.gz -C $CURR_PATH/$ROOT_DIR/android
+    sudo cp lz4 /usr/bin/lz4
+    sync
+    tar zxvf prebuilts-rk3588-AndroidT13*.tar.gz -C $CURR_PATH/$ROOT_DIR/android
 }
 
 function building()
