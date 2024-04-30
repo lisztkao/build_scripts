@@ -39,7 +39,7 @@ function build_image()
 {
 	cd $CURR_PATH/$ROOT_DIR 2>&1 > /dev/null
 	echo "[ADV] building ..."
-	script/build_release.sh -all
+	./script/build_release.sh -all
 }
 
 function generate_md5()
