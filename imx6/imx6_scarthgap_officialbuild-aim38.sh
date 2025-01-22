@@ -6,9 +6,9 @@ MEMORY_LIST=$3
 BOOT_DEVICE_LIST=$4
 
 #--- [platform specific] ---
-VER_PREFIX="imx8"
+VER_PREFIX="imx6"
 TMP_DIR="tmp"
-DEFAULT_DEVICE="imx8mprsb3720a2"
+DEFAULT_DEVICE="imx6qrsb3430a2"
 #---------------------------
 echo "[ADV] DATE = ${DATE}"
 echo "[ADV] STORED = ${STORED}"
@@ -67,36 +67,16 @@ function define_cpu_type()
 {
         CPU_TYPE=`expr $1 : '.*-\(.*\)$'`
         case $CPU_TYPE in
-                "8X")
+                "6q")
                         PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8qxp"
-                        CPU_TYPE="iMX8X"
+                        KERNEL_CPU_TYPE="imx6q"
+                        CPU_TYPE="iMX6q"
                         ;;
-                "8M")
+                "6dl")
                         PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8mq"
-                        CPU_TYPE="iMX8M"
+                        KERNEL_CPU_TYPE="imx6dl"
+                        CPU_TYPE="iMX6dl"
                         ;;
-                "8MM")
-                        PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8mm"
-                        CPU_TYPE="iMX8MM"
-                        ;;
-                "8MP")
-                        PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8mp"
-                        CPU_TYPE="iMX8MP"
-                        ;;
-                "8QM")
-                        PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8qm"
-                        CPU_TYPE="iMX8QM"
-                        ;;
-                "8U")
-			PRODUCT=`expr $1 : '\(.*\).*-'`
-			KERNEL_CPU_TYPE="imx8ulp"
-			CPU_TYPE="iMX8ULP"
-			;;
                 *)
                         # Do nothing
                         ;;
@@ -447,7 +427,7 @@ function get_bsp_tarball()
 
 function get_csv_info()
 {
-	IMAGE_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$1"_"$DATE"
+	IMAGE_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$DATE"
 	CSV_FILE="$STORAGE_PATH/${IMAGE_DIR}.img.csv"
 
 	echo "[ADV] Show HASH in ${CSV_FILE}"

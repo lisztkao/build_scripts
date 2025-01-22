@@ -44,9 +44,6 @@ if [ -e $STORAGE_PATH ] ; then
 else
 	echo "[ADV] mkdir $STORAGE_PATH"
 	mkdir -p $STORAGE_PATH
-        mkdir -p $STORAGE_PATH/bsp
-        mkdir -p $STORAGE_PATH/image
-        mkdir -p $STORAGE_PATH/others
 fi
 
 # Make mnt folder
@@ -66,11 +63,11 @@ function define_cpu_type()
 {
         CPU_TYPE=`expr $1 : '.*-\(.*\)$'`
         case $CPU_TYPE in
-                "93")
-			PRODUCT=`expr $1 : '\(.*\).*-'`
-			KERNEL_CPU_TYPE="imx93"
-			CPU_TYPE="iMX93"
-			;;
+                "95")
+                        PRODUCT=`expr $1 : '\(.*\).*-'`
+                        KERNEL_CPU_TYPE="imx95"
+                        CPU_TYPE="iMX95"
+                        ;;
                 *)
                         # Do nothing
                         ;;
@@ -88,7 +85,8 @@ function do_repo_init()
         REPO_OPT="$REPO_OPT -m $BSP_XML"
     fi
 
-    repo init $REPO_OPT
+    echo "[ADV] Do repo init and forward stderr to stdout because azure pipeline!"
+    repo init $REPO_OPT 2>&1
 }
 
 function get_source_code()
@@ -109,7 +107,8 @@ function get_source_code()
         do_repo_init
     fi
 
-    repo sync
+    echo "[ADV] Do repo sync and forward stderr to stdout because azure pipeline!"
+    repo sync 2>&1
 
     cd $CURR_PATH
 }
@@ -195,10 +194,10 @@ function add_version()
 {
 	# Set U-boot version
 	sed -i "/UBOOT_LOCALVERSION/d" $ROOT_DIR/$U_BOOT_PATH
-	echo "UBOOT_LOCALVERSION = \"-$(echo "$OFFICIAL_VER" | tr '[:upper:]' '[:lower:]')\"" >> $ROOT_DIR/$U_BOOT_PATH
-
+	echo "UBOOT_LOCALVERSION = \"-$OFFICIAL_VER\"" >> $ROOT_DIR/$U_BOOT_PATH
+	
 	# Set Linux version (replace)
-	sed -i "0,/LOCALVERSION/ s/LOCALVERSION = .*/LOCALVERSION = \"-$(echo "$OFFICIAL_VER" | tr '[:upper:]' '[:lower:]')\"/g" $ROOT_DIR/$KERNEL_PATH
+	sed -i "0,/LOCALVERSION/ s/LOCALVERSION = .*/LOCALVERSION = \"-$OFFICIAL_VER\"/g" $ROOT_DIR/$KERNEL_PATH
 }
 
 function building()
@@ -276,12 +275,17 @@ function rebuild_bootloader()
         #rebuild bootloader
 	BOOTLOADER_TYPE=$1 
         case $BOOTLOADER_TYPE in
-                "512M" | "1G" | "2G" | "4G" | "6G")
+                "512M" | "1G" | "2G" | "4G" | "6G" | "8G" | "16G")
 			echo "[ADV] Rebuild image for $BOOTLOADER_TYPE"
 			echo "UBOOT_CONFIG = \"$BOOTLOADER_TYPE\"" >> $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/conf/local.conf
 			building imx-atf cleansstate
-			building optee-os cleansstate
-			#building imx-boot clean
+
+			# iMX95 not support optee temporary
+			if [ "$CPU_TYPE" != "iMX95" ]; then
+				building optee-os cleansstate
+			fi
+
+			building imx-boot clean
 			building $DEPLOY_IMAGE_NAME clean
 			building $DEPLOY_IMAGE_NAME 
 			;;
@@ -336,32 +340,48 @@ function prepare_images()
                 "misc")
                         cp $DEPLOY_MISC_PATH/${KERNEL_CPU_TYPE}*.dtb $OUTPUT_DIR
                         cp $DEPLOY_MISC_PATH/Image $OUTPUT_DIR
-                        cp $DEPLOY_MISC_PATH/imx-boot-imx8* $OUTPUT_DIR
-                        cp $DEPLOY_MISC_PATH/tee.bin $OUTPUT_DIR
+                        cp $DEPLOY_MISC_PATH/imx-boot-imx9* $OUTPUT_DIR
+
+                        if [ -e $DEPLOY_MISC_PATH/tee.bin ] ; then
+                                cp $DEPLOY_MISC_PATH/tee.bin $OUTPUT_DIR
+                        fi
+
                         cp -a $DEPLOY_MISC_PATH/imx-boot-tools $OUTPUT_DIR
                         ;;
                 "imx-boot")
                         cp -a $DEPLOY_IMX_BOOT_PATH/* $OUTPUT_DIR
-                        chmod 755 $CURR_PATH/cp_uboot.sh
-                        chmod 755 $CURR_PATH/mk_imx-boot.sh
-                        sudo cp $CURR_PATH/cp_uboot.sh $OUTPUT_DIR
-                        sudo cp $CURR_PATH/mk_imx-boot.sh $OUTPUT_DIR
+
+                        if [ -e $CURR_PATH/cp_uboot.sh ] ; then
+                                chmod 755 $CURR_PATH/cp_uboot.sh
+                                sudo cp $CURR_PATH/cp_uboot.sh $OUTPUT_DIR
+                        fi
+
+                        if [ -e $CURR_PATH/cp_uboot.sh ] ; then
+                                chmod 755 $CURR_PATH/mk_imx-boot.sh
+                                sudo cp $CURR_PATH/mk_imx-boot.sh $OUTPUT_DIR
+                        fi
                         ;;
                 "modules")
-                        FILE_NAME="modules-imx8*.tgz"
+                        FILE_NAME="modules-imx9*.tgz"
                         cp $DEPLOY_MODULES_PATH/$FILE_NAME $OUTPUT_DIR
                         ;;
                 "normal")
                         FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.wic"
-                        unzstd -f $DEPLOY_IMAGE_PATH/$FILE_NAME.zst
+                        unzstd -q -f $DEPLOY_IMAGE_PATH/$FILE_NAME.zst
                         cp $DEPLOY_IMAGE_PATH/$FILE_NAME $OUTPUT_DIR
                         ;;
                 "individually")
                         mkdir $OUTPUT_DIR/image $OUTPUT_DIR/mk_inand
-                        sudo cp $CURR_PATH/individually-script-tool/* $OUTPUT_DIR/mk_inand/
-                        sudo chmod 755 $OUTPUT_DIR/mk_inand/*
-                        FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.tar.bz2"
-                        cp $DEPLOY_IMAGE_PATH/$FILE_NAME 					$OUTPUT_DIR/image/rootfs.tar.bz2
+
+			if [ -d "$CURR_PATH/individually-script-tool" ]; then
+                                if [ "$(ls -A $CURR_PATH/individually-script-tool)" ]; then
+                                        sudo cp $CURR_PATH/individually-script-tool/* $OUTPUT_DIR/mk_inand/
+                                        sudo chmod 755 $OUTPUT_DIR/mk_inand/*
+                                fi
+			fi
+
+                        FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.tar.zst"
+                        cp $DEPLOY_IMAGE_PATH/$FILE_NAME 					$OUTPUT_DIR/image/rootfs.tar.zst
                         cp $DEPLOY_IMAGE_PATH/${KERNEL_CPU_TYPE}*dtb				$OUTPUT_DIR/image
                         cp $DEPLOY_IMAGE_PATH/Image						$OUTPUT_DIR/image
                         cp $DEPLOY_IMAGE_PATH/imx-boot-"${KERNEL_CPU_TYPE}${PRODUCT}"-"$MEMORY".bin*	$OUTPUT_DIR/image/flash.bin
@@ -372,8 +392,12 @@ function prepare_images()
                         # normal image
                         FILE_NAME=${DEPLOY_IMAGE_NAME}"-"${KERNEL_CPU_TYPE}${PRODUCT}"*.rootfs.wic"
                         cp $DEPLOY_IMAGE_PATH/$FILE_NAME $OUTPUT_DIR/image
-                        chmod 755 $CURR_PATH/mksd-linux.sh
-                        sudo cp $CURR_PATH/mksd-linux.sh $OUTPUT_DIR/mk_inand/
+
+			if [ -e $CURR_PATH/mksd-linux.sh ] ; then
+                                chmod 755 $CURR_PATH/mksd-linux.sh
+                                sudo cp $CURR_PATH/mksd-linux.sh $OUTPUT_DIR/mk_inand/
+			fi
+
 			rm $DEPLOY_IMAGE_PATH/$FILE_NAME && sync
                         ;;
                 *)
@@ -404,27 +428,27 @@ function copy_image_to_storage()
 
 	case $1 in
 		"bsp")
-			mv -f ${ROOT_DIR}.tgz $STORAGE_PATH/bsp
+			mv -f ${ROOT_DIR}.tgz $STORAGE_PATH
 		;;
 		"flash")
-			mv -f ${FLASH_DIR}.tgz $STORAGE_PATH/image
+			mv -f ${FLASH_DIR}.tgz $STORAGE_PATH
 		;;
 		"individually")
-			mv -f ${INDIVIDUAL_DIR}.tgz $STORAGE_PATH/image
+			mv -f ${INDIVIDUAL_DIR}.tgz $STORAGE_PATH
 		;;
 		"misc")
-			mv -f ${MISC_DIR}.tgz $STORAGE_PATH/others
+			mv -f ${MISC_DIR}.tgz $STORAGE_PATH
 		;;
                 "imx-boot")
-                        mv -f ${IMX_BOOT_DIR}.tgz $STORAGE_PATH/others
+                        mv -f ${IMX_BOOT_DIR}.tgz $STORAGE_PATH
                 ;;
 		"modules")
-			mv -f ${MODULES_DIR}.tgz $STORAGE_PATH/others
+			mv -f ${MODULES_DIR}.tgz $STORAGE_PATH
 		;;
 		"normal")
 			generate_csv $IMAGE_DIR.img.gz
 			mv ${IMAGE_DIR}.img.csv $STORAGE_PATH
-			mv -f $IMAGE_DIR.img.gz $STORAGE_PATH/image
+			mv -f $IMAGE_DIR.img.gz $STORAGE_PATH
 		;;
 		*)
 		echo "[ADV] copy_image_to_storage: invalid parameter #1!"
@@ -446,7 +470,7 @@ if [ "$PRODUCT" == "$VER_PREFIX" ]; then
 
         # BSP source code
         echo "[ADV] tar $ROOT_DIR.tgz file"
-        tar czf $ROOT_DIR.tgz $ROOT_DIR --exclude-vcs --exclude .repo
+        tar --exclude-vcs --exclude='.repo' -czf $ROOT_DIR.tgz $ROOT_DIR
         generate_md5 $ROOT_DIR.tgz
 
         copy_image_to_storage bsp

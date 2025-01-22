@@ -4,8 +4,17 @@ PRODUCT=$1
 CURR_PATH="$PWD"
 ROOT_DIR="${PLATFORM_PREFIX}_${TARGET_BOARD}_${RELEASE_VERSION}_${DATE}"
 OUTPUT_DIR="${CURR_PATH}/${STORED}/${DATE}"
-IMAGE_VER="${MODEL_NAME}${BOARD_VER}${AIM_VERSION}UIV${RELEASE_VERSION}"
-VER_TAG="${VER_PREFIX}UBV"$(echo $RELEASE_VERSION | sed 's/[.]//')
+IMAGE_VER="${PROJECT}_${OS_VERSION}${RELEASE_VERSION}_${KERNEL_VERSION}_${SOC_MEM}_${STORAGE}_${DATE}"
+VER_TAG="${PROJECT}_${OS_VERSION}${RELEASE_VERSION}_${KERNEL_VERSION}_${SOC_MEM}"
+
+HASH_MANIFEST=""
+HASH_JETSON_DOWNLOAD=""
+HASH_JETSON_KERNEL=""
+HASH_JETSON_L4T=""
+HASH_JETSON_SCRIPTS=""
+HASH_JETSON_TOOLS=""
+
+EXISTED_VERSION=""
 
 echo "[ADV] DATE = ${DATE}"
 echo "[ADV] STORED = ${STORED}"
@@ -69,38 +78,23 @@ function get_source_code()
 function get_csv_info()
 {
     echo "[ADV] get csv info"
-    CSV_FILE=${CURR_PATH}/${PLATFORM_PREFIX}/${DATE}/${IMAGE_VER}_${DATE}.csv
+    CSV_FILE=${CURR_PATH}/${PLATFORM_PREFIX}/${DATE}/${IMAGE_VER}.tgz.csv
 
     echo "[ADV] Show HASH in ${CSV_FILE}"
     if [ -e ${CSV_FILE} ] ; then
         HASH_MANIFEST=`cat ${CSV_FILE} | grep "Manifest" | cut -d ',' -f 2`
-        HASH_AMSS=`cat ${CSV_FILE} | grep "AMSS" | cut -d ',' -f 2`
-        HASH_AUDIO_KERNEL=`cat ${CSV_FILE} | grep "AUDIO_KERNEL" | cut -d ',' -f 2`
-        HASH_BOOTLOADER=`cat ${CSV_FILE} | grep "BOOTLOADER" | cut -d ',' -f 2`
-        HASH_BSP=`cat ${CSV_FILE} | grep "BSP" | cut -d ',' -f 2`
-        HASH_DISPLAY_HARDWARE=`cat ${CSV_FILE} | grep "DISPLAY_HARDWARE" | cut -d ',' -f 2`
-        HASH_DOWNLOAD=`cat ${CSV_FILE} | grep "DOWNLOAD" | cut -d ',' -f 2`
-        HASH_KERNEL=`cat ${CSV_FILE} | grep "QCS_KERNEL" | cut -d ',' -f 2`
-        HASH_META_ADVANTECH=`cat ${CSV_FILE} | grep "META_ADVANTECH" | cut -d ',' -f 2`
-        HASH_META_QTI_BSP=`cat ${CSV_FILE} | grep "META_QTI_BSP" | cut -d ',' -f 2`
-        HASH_META_QTI_UBUNTU=`cat ${CSV_FILE} | grep "META_QTI_UBUNTU" | cut -d ',' -f 2`
-        HASH_SCRIPTS=`cat ${CSV_FILE} | grep "SCRIPTS" | cut -d ',' -f 2`
-        HASH_TOOLS=`cat ${CSV_FILE} | grep "TOOLS" | cut -d ',' -f 2`
+        HASH_JETSON_DOWNLOAD=`cat ${CSV_FILE} | grep "JETSON_DOWNLOAD" | cut -d ',' -f 2`
+        HASH_JETSON_KERNEL=`cat ${CSV_FILE} | grep "JETSON_KERNEL" | cut -d ',' -f 2`
+        HASH_JETSON_L4T=`cat ${CSV_FILE} | grep "JETSON_L4T" | cut -d ',' -f 2`
+        HASH_JETSON_SCRIPTS=`cat ${CSV_FILE} | grep "JETSON_SCRIPTS" | cut -d ',' -f 2`
+        HASH_JETSON_TOOLS=`cat ${CSV_FILE} | grep "JETSON_TOOLS" | cut -d ',' -f 2`
 
         echo "[ADV] HASH_MANIFEST : ${HASH_MANIFEST}"
-        echo "[ADV] HASH_AMSS : ${HASH_AMSS}"
-        echo "[ADV] HASH_AUDIO_KERNEL : ${HASH_AUDIO_KERNEL}"
-        echo "[ADV] HASH_BOOTLOADER : ${HASH_BOOTLOADER}"
-        echo "[ADV] HASH_BSP : ${HASH_BSP}"
-        echo "[ADV] HASH_DISPLAY_HARDWARE : ${HASH_DISPLAY_HARDWARE}"
-        echo "[ADV] HASH_MANIFEST : ${HASH_MANIFEST}"
-        echo "[ADV] HASH_DOWNLOAD : ${HASH_DOWNLOAD}"
-        echo "[ADV] HASH_KERNEL : ${HASH_KERNEL}"
-        echo "[ADV] HASH_META_ADVANTECH : ${HASH_META_ADVANTECH}"
-        echo "[ADV] HASH_META_QTI_BSP : ${HASH_META_QTI_BSP}"
-        echo "[ADV] HASH_META_QTI_UBUNTU : ${HASH_META_QTI_UBUNTU}"
-        echo "[ADV] HASH_SCRIPTS : ${HASH_SCRIPTS}"
-        echo "[ADV] HASH_TOOLS : ${HASH_TOOLS}"
+        echo "[ADV] HASH_JETSON_DOWNLOAD : ${HASH_JETSON_DOWNLOAD}"
+        echo "[ADV] HASH_JETSON_KERNEL : ${HASH_JETSON_KERNEL}"
+        echo "[ADV] HASH_JETSON_L4T : ${HASH_JETSON_L4T}"
+        echo "[ADV] HASH_JETSON_SCRIPTS : ${HASH_JETSON_SCRIPTS}"
+        echo "[ADV] HASH_JETSON_TOOLS : ${HASH_JETSON_TOOLS}"
     else
         echo "[ADV] Cannot find ${CSV_FILE}"
         exit 1;
@@ -182,17 +176,11 @@ if [ -z "$EXISTED_VERSION" ] ; then
     get_csv_info
 
     echo "[ADV] Add tag"
-    commit_tag amss $BSP_BRANCH $HASH_AMSS
-    commit_tag src/vendor/qcom/opensource/audio-kernel $BSP_BRANCH $HASH_AUDIO_KERNEL
-    commit_tag src/bootable/bootloader/edk2 $BSP_BRANCH $HASH_BOOTLOADER
-    commit_tag src/hardware/qcom/display $BSP_BRANCH $HASH_DISPLAY_HARDWARE
-    commit_tag download $BSP_BRANCH $HASH_DOWNLOAD
-    commit_tag src/kernel/msm-5.4 $KERNEL_BRANCH $HASH_KERNEL
-    commit_tag poky/meta-advantech $BSP_BRANCH $HASH_META_ADVANTECH
-    commit_tag poky/meta-qti-bsp $BSP_BRANCH $HASH_META_QTI_BSP
-    commit_tag poky/meta-qti-ubuntu $BSP_BRANCH $HASH_META_QTI_UBUNTU
-    commit_tag scripts $BSP_BRANCH $HASH_SCRIPTS
-    commit_tag tools $BSP_BRANCH $HASH_TOOLS
+    commit_tag download $BSP_BRANCH $HASH_JETSON_DOWNLOAD
+    commit_tag kernel $PROJECT_BRANCH $HASH_JETSON_KERNEL
+    commit_tag Linux_for_Tegra $PROJECT_BRANCH $HASH_JETSON_L4T
+    commit_tag scripts $PROJECT_BRANCH $HASH_JETSON_SCRIPTS
+    commit_tag tools $PROJECT_BRANCH $HASH_JETSON_TOOLS
 
     # Create manifests xml and commit
     create_xml_and_commit $HASH_MANIFEST

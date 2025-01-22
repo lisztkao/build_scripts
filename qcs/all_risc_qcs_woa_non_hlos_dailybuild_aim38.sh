@@ -6,7 +6,7 @@ if [ "$ROM2860A1" == "true" ]; then
     BOARD_VER="A1"
     export MODEL_NAME
     export BOARD_VER
-    ./risc_qcs_linux_dailybuild_aim37.sh ROM2860A1
+    ./risc_qcs_woa_non_hlos_dailybuild_aim38.sh ROM2860A1
 fi
 
 echo "[ADV] All done!"

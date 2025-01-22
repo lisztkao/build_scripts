@@ -71,6 +71,11 @@ function define_cpu_type()
 			KERNEL_CPU_TYPE="imx93"
 			CPU_TYPE="iMX93"
 			;;
+		"95")
+			PRODUCT=`expr $1 : '\(.*\).*-'`
+			KERNEL_CPU_TYPE="imx95"
+			CPU_TYPE="iMX95"
+			;;
                 *)
                         # Do nothing
                         ;;
@@ -88,7 +93,7 @@ function do_repo_init()
         REPO_OPT="$REPO_OPT -m $BSP_XML"
     fi
 
-    repo init $REPO_OPT
+    repo init $REPO_OPT 2>&1
 }
 
 function get_source_code()
@@ -109,7 +114,7 @@ function get_source_code()
         do_repo_init
     fi
 
-    repo sync
+    repo sync 2>&1
 
     cd $CURR_PATH
 }
@@ -195,10 +200,11 @@ function add_version()
 {
 	# Set U-boot version
 	sed -i "/UBOOT_LOCALVERSION/d" $ROOT_DIR/$U_BOOT_PATH
-	echo "UBOOT_LOCALVERSION = \"-$(echo "$OFFICIAL_VER" | tr '[:upper:]' '[:lower:]')\"" >> $ROOT_DIR/$U_BOOT_PATH
+	echo "UBOOT_LOCALVERSION = \"-$OFFICIAL_VER\"" >> $ROOT_DIR/$U_BOOT_PATH
 
-	# Set Linux version (replace)
-	sed -i "0,/LOCALVERSION/ s/LOCALVERSION = .*/LOCALVERSION = \"-$(echo "$OFFICIAL_VER" | tr '[:upper:]' '[:lower:]')\"/g" $ROOT_DIR/$KERNEL_PATH
+	# Set Linux version
+	sed -i "/LOCALVERSION/d" $ROOT_DIR/$KERNEL_PATH
+	echo "LOCALVERSION = \"-$OFFICIAL_VER\"" >> $ROOT_DIR/$KERNEL_PATH
 }
 
 function building()
@@ -239,6 +245,8 @@ function set_environment()
 	else
 		# First build
 		EULA=1 DISTRO=$BACKEND_TYPE MACHINE=${KERNEL_CPU_TYPE}${PRODUCT} UBOOT_CONFIG=${PRE_MEMORY} source imx-setup-release.sh -b $BUILDALL_DIR
+        echo 'BB_NUMBER_THREADS = "16"' >> conf/local.conf
+        echo 'PARALLEL_MAKE = "-j 4"' >> conf/local.conf
 	fi
 }
 
@@ -276,11 +284,16 @@ function rebuild_bootloader()
         #rebuild bootloader
 	BOOTLOADER_TYPE=$1 
         case $BOOTLOADER_TYPE in
-                "512M" | "1G" | "2G" | "4G" | "6G")
+                "512M" | "1G" | "2G" | "4G" | "6G" | "8G" | "16G")
 			echo "[ADV] Rebuild image for $BOOTLOADER_TYPE"
 			echo "UBOOT_CONFIG = \"$BOOTLOADER_TYPE\"" >> $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/conf/local.conf
 			building imx-atf cleansstate
-			building optee-os cleansstate
+
+			# iMX95 not support optee temporary
+			if [ "$CPU_TYPE" != "iMX95" ]; then
+				building optee-os cleansstate
+			fi
+
 			#building imx-boot clean
 			building $DEPLOY_IMAGE_NAME clean
 			building $DEPLOY_IMAGE_NAME 
@@ -336,7 +349,7 @@ function prepare_images()
                 "misc")
                         cp $DEPLOY_MISC_PATH/${KERNEL_CPU_TYPE}*.dtb $OUTPUT_DIR
                         cp $DEPLOY_MISC_PATH/Image $OUTPUT_DIR
-                        cp $DEPLOY_MISC_PATH/imx-boot-imx8* $OUTPUT_DIR
+                        cp $DEPLOY_MISC_PATH/imx-boot-${KERNEL_CPU_TYPE}* $OUTPUT_DIR
                         cp $DEPLOY_MISC_PATH/tee.bin $OUTPUT_DIR
                         cp -a $DEPLOY_MISC_PATH/imx-boot-tools $OUTPUT_DIR
                         ;;
@@ -348,7 +361,7 @@ function prepare_images()
                         sudo cp $CURR_PATH/mk_imx-boot.sh $OUTPUT_DIR
                         ;;
                 "modules")
-                        FILE_NAME="modules-imx8*.tgz"
+                        FILE_NAME="modules-${KERNEL_CPU_TYPE}*.tgz"
                         cp $DEPLOY_MODULES_PATH/$FILE_NAME $OUTPUT_DIR
                         ;;
                 "normal")
@@ -446,7 +459,7 @@ if [ "$PRODUCT" == "$VER_PREFIX" ]; then
 
         # BSP source code
         echo "[ADV] tar $ROOT_DIR.tgz file"
-        tar czf $ROOT_DIR.tgz $ROOT_DIR --exclude-vcs --exclude .repo
+        tar czf $ROOT_DIR.tgz --exclude-vcs --exclude .repo $ROOT_DIR
         generate_md5 $ROOT_DIR.tgz
 
         copy_image_to_storage bsp
@@ -461,8 +474,9 @@ else #"$PRODUCT" != "$VER_PREFIX"
                 ln -s $CURR_PATH/downloads $CURR_PATH/$ROOT_DIR/downloads
         fi
 
-        echo "[ADV] add version"
-        add_version
+# no need in dailybuild
+#        echo "[ADV] add version"
+#        add_version
 
 	for MEMORY in $MEMORY_LIST;do
                 if [ "$PRE_MEMORY" != "" ]; then
@@ -480,21 +494,28 @@ else #"$PRODUCT" != "$VER_PREFIX"
 		prepare_images normal $IMAGE_DIR
 		copy_image_to_storage normal
 
+
+[[ ${SKIP_FLASH_TOOL^^} != "Y" ]] && {
 		echo "[ADV] create flash tool"
 		FLASH_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$MEMORY"_flash_tool
 		prepare_images flash $FLASH_DIR
 		copy_image_to_storage flash
+}
 
+[[ ${SKIP_SCRIPT_TOOL^^} != "Y" ]] && {
 		echo "[ADV] create individually script tool "
 		INDIVIDUAL_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$MEMORY"_individually_script_tool
 		prepare_images individually $INDIVIDUAL_DIR
 		copy_image_to_storage individually
+}
 
+[[ ${SKIP_IMX_BOOT^^} != "Y" ]] && {
 		echo "[ADV] create imx-boot files"
 		DEPLOY_IMX_BOOT_PATH="$CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/work/${KERNEL_CPU_TYPE}${PRODUCT}-poky-linux/imx-boot/*/git"
 		IMX_BOOT_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$MEMORY"_imx-boot
 		prepare_images imx-boot $IMX_BOOT_DIR
 		copy_image_to_storage imx-boot
+}
 
 		for BOOT_DEVICE in $BOOT_DEVICE_LIST; do
                         rebuild_bootloader $BOOT_DEVICE

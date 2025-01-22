@@ -6,9 +6,9 @@ MEMORY_LIST=$3
 BOOT_DEVICE_LIST=$4
 
 #--- [platform specific] ---
-VER_PREFIX="imx8"
+VER_PREFIX="imx9"
 TMP_DIR="tmp"
-DEFAULT_DEVICE="imx8mprsb3720a2"
+DEFAULT_DEVICE="imx95aom3511a1"
 #---------------------------
 echo "[ADV] DATE = ${DATE}"
 echo "[ADV] STORED = ${STORED}"
@@ -67,35 +67,10 @@ function define_cpu_type()
 {
         CPU_TYPE=`expr $1 : '.*-\(.*\)$'`
         case $CPU_TYPE in
-                "8X")
-                        PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8qxp"
-                        CPU_TYPE="iMX8X"
-                        ;;
-                "8M")
-                        PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8mq"
-                        CPU_TYPE="iMX8M"
-                        ;;
-                "8MM")
-                        PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8mm"
-                        CPU_TYPE="iMX8MM"
-                        ;;
-                "8MP")
-                        PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8mp"
-                        CPU_TYPE="iMX8MP"
-                        ;;
-                "8QM")
-                        PRODUCT=`expr $1 : '\(.*\).*-'`
-                        KERNEL_CPU_TYPE="imx8qm"
-                        CPU_TYPE="iMX8QM"
-                        ;;
-                "8U")
+                "95")
 			PRODUCT=`expr $1 : '\(.*\).*-'`
-			KERNEL_CPU_TYPE="imx8ulp"
-			CPU_TYPE="iMX8ULP"
+			KERNEL_CPU_TYPE="imx95"
+			CPU_TYPE="iMX95"
 			;;
                 *)
                         # Do nothing
@@ -328,7 +303,7 @@ function building()
         if [ "$1" == "populate_sdk" ]; then
 		        if [ "$DEPLOY_IMAGE_NAME" == "fsl-image-full" ]; then
                         echo "[ADV] bitbake meta-toolchain"
-                        bitbake meta-toolchain-qt6
+                        bitbake meta-toolchain
                 else
                         echo "[ADV] bitbake $DEPLOY_IMAGE_NAME -c populate_sdk"
                         bitbake $DEPLOY_IMAGE_NAME -c populate_sdk
@@ -425,7 +400,7 @@ function copy_image_to_storage()
 	case $1 in
 		"sdk")
 			mv -f ${SDK_DIR}.tgz $STORAGE_PATH
-			;;
+		;;
 		*)
 			echo "[ADV] copy_image_to_storage: invalid parameter #1!"
 			exit 1;

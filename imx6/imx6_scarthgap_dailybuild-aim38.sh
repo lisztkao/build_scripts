@@ -6,7 +6,7 @@ MEMORY_LIST=$3
 BOOT_DEVICE_LIST=$4
 
 #--- [platform specific] ---
-VER_PREFIX="imx9"
+VER_PREFIX="imx6"
 TMP_DIR="tmp"
 #---------------------------
 echo "[ADV] DATE = ${DATE}"
@@ -44,9 +44,6 @@ if [ -e $STORAGE_PATH ] ; then
 else
 	echo "[ADV] mkdir $STORAGE_PATH"
 	mkdir -p $STORAGE_PATH
-        mkdir -p $STORAGE_PATH/bsp
-        mkdir -p $STORAGE_PATH/image
-        mkdir -p $STORAGE_PATH/others
 fi
 
 # Make mnt folder
@@ -66,11 +63,16 @@ function define_cpu_type()
 {
         CPU_TYPE=`expr $1 : '.*-\(.*\)$'`
         case $CPU_TYPE in
-                "93")
-			PRODUCT=`expr $1 : '\(.*\).*-'`
-			KERNEL_CPU_TYPE="imx93"
-			CPU_TYPE="iMX93"
-			;;
+                "6q")
+                        PRODUCT=`expr $1 : '\(.*\).*-'`
+                        KERNEL_CPU_TYPE="imx6q"
+                        CPU_TYPE="iMX6q"
+                        ;;
+                "6dl")
+                        PRODUCT=`expr $1 : '\(.*\).*-'`
+                        KERNEL_CPU_TYPE="imx6dl"
+                        CPU_TYPE="iMX6dl"
+                        ;;
                 *)
                         # Do nothing
                         ;;
@@ -166,8 +168,8 @@ function generate_csv()
 
     HASH_BSP=$(cd $CURR_PATH/$ROOT_DIR/.repo/manifests && git rev-parse HEAD)
     HASH_ADV=$(cd $CURR_PATH/$ROOT_DIR/$META_ADVANTECH_PATH && git rev-parse HEAD)
-    HASH_KERNEL=$(cd $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/work/${KERNEL_CPU_TYPE}${PRODUCT}-poky-linux/linux-imx/$KERNEL_VERSION*/git && git rev-parse HEAD)
-    HASH_UBOOT=$(cd $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/work/${KERNEL_CPU_TYPE}${PRODUCT}-poky-linux/u-boot-imx/*$U_BOOT_VERSION*/git && git rev-parse HEAD)
+    HASH_KERNEL=$(cd $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/work/${KERNEL_CPU_TYPE}${PRODUCT}-poky-linux-gnueabi/linux-imx/$KERNEL_VERSION*/git && git rev-parse HEAD)
+    HASH_UBOOT=$(cd $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/work/${KERNEL_CPU_TYPE}${PRODUCT}-poky-linux-gnueabi/u-boot-imx/*$U_BOOT_VERSION*/git && git rev-parse HEAD)
     cd $CURR_PATH
 
     cat > ${FILENAME%.*}.csv << END_OF_CSV
@@ -195,10 +197,10 @@ function add_version()
 {
 	# Set U-boot version
 	sed -i "/UBOOT_LOCALVERSION/d" $ROOT_DIR/$U_BOOT_PATH
-	echo "UBOOT_LOCALVERSION = \"-$(echo "$OFFICIAL_VER" | tr '[:upper:]' '[:lower:]')\"" >> $ROOT_DIR/$U_BOOT_PATH
+	echo "UBOOT_LOCALVERSION = \"-$OFFICIAL_VER\"" >> $ROOT_DIR/$U_BOOT_PATH
 
 	# Set Linux version (replace)
-	sed -i "0,/LOCALVERSION/ s/LOCALVERSION = .*/LOCALVERSION = \"-$(echo "$OFFICIAL_VER" | tr '[:upper:]' '[:lower:]')\"/g" $ROOT_DIR/$KERNEL_PATH
+	sed -i "0,/LOCALVERSION/ s/LOCALVERSION = .*/LOCALVERSION = \"-$OFFICIAL_VER\"/g" $ROOT_DIR/$KERNEL_PATH
 }
 
 function building()
@@ -247,8 +249,8 @@ function clean_yocto_packages()
         echo "[ADV] build_yocto_image: clean for virtual_libg2d"
         PACKAGE_LIST=" \
 		gstreamer1.0-rtsp-server gst-examples freerdp \
-		gstreamer1.0-plugins-good gstreamer1.0-plugins-base \
-		gstreamer1.0-plugins-bad kmscube opencv imx-gst1.0-plugin \
+		imx-gpu-apitrace gstreamer1.0-plugins-good gstreamer1.0-plugins-base \
+		gstreamer1.0-plugins-bad imx-gpu-sdk opencv imx-gst1.0-plugin \
 		weston "
         for PACKAGE in ${PACKAGE_LIST}
         do
@@ -269,6 +271,9 @@ function clean_yocto_packages()
 	echo "[ADV] build_yocto_image: clean for other packages"
 	building spirv-tools cleansstate
 	building fmt cleansstate
+	if [ "$PRODUCT" == "rom7720a1" ] || [ "$PRODUCT" == "rom5620a1" ] || [ "$PRODUCT" == "rom3620a1" ] || [ "$PRODUCT" == "rom5722a1" ] || [ "$PRODUCT" == "rsb3720a2" ]; then
+                building nn-imx cleansstate
+        fi
 }
 
 function rebuild_bootloader()
@@ -281,7 +286,7 @@ function rebuild_bootloader()
 			echo "UBOOT_CONFIG = \"$BOOTLOADER_TYPE\"" >> $CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/conf/local.conf
 			building imx-atf cleansstate
 			building optee-os cleansstate
-			#building imx-boot clean
+			building imx-boot clean
 			building $DEPLOY_IMAGE_NAME clean
 			building $DEPLOY_IMAGE_NAME 
 			;;
@@ -336,7 +341,7 @@ function prepare_images()
                 "misc")
                         cp $DEPLOY_MISC_PATH/${KERNEL_CPU_TYPE}*.dtb $OUTPUT_DIR
                         cp $DEPLOY_MISC_PATH/Image $OUTPUT_DIR
-                        cp $DEPLOY_MISC_PATH/imx-boot-imx8* $OUTPUT_DIR
+                        cp $DEPLOY_MISC_PATH/imx-boot-imx6* $OUTPUT_DIR
                         cp $DEPLOY_MISC_PATH/tee.bin $OUTPUT_DIR
                         cp -a $DEPLOY_MISC_PATH/imx-boot-tools $OUTPUT_DIR
                         ;;
@@ -348,7 +353,7 @@ function prepare_images()
                         sudo cp $CURR_PATH/mk_imx-boot.sh $OUTPUT_DIR
                         ;;
                 "modules")
-                        FILE_NAME="modules-imx8*.tgz"
+                        FILE_NAME="modules-imx6*.tgz"
                         cp $DEPLOY_MODULES_PATH/$FILE_NAME $OUTPUT_DIR
                         ;;
                 "normal")
@@ -404,27 +409,27 @@ function copy_image_to_storage()
 
 	case $1 in
 		"bsp")
-			mv -f ${ROOT_DIR}.tgz $STORAGE_PATH/bsp
+			mv -f ${ROOT_DIR}.tgz $STORAGE_PATH
 		;;
 		"flash")
-			mv -f ${FLASH_DIR}.tgz $STORAGE_PATH/image
+			mv -f ${FLASH_DIR}.tgz $STORAGE_PATH
 		;;
 		"individually")
-			mv -f ${INDIVIDUAL_DIR}.tgz $STORAGE_PATH/image
+			mv -f ${INDIVIDUAL_DIR}.tgz $STORAGE_PATH
 		;;
 		"misc")
-			mv -f ${MISC_DIR}.tgz $STORAGE_PATH/others
+			mv -f ${MISC_DIR}.tgz $STORAGE_PATH
 		;;
                 "imx-boot")
-                        mv -f ${IMX_BOOT_DIR}.tgz $STORAGE_PATH/others
+                        mv -f ${IMX_BOOT_DIR}.tgz $STORAGE_PATH
                 ;;
 		"modules")
-			mv -f ${MODULES_DIR}.tgz $STORAGE_PATH/others
+			mv -f ${MODULES_DIR}.tgz $STORAGE_PATH
 		;;
 		"normal")
 			generate_csv $IMAGE_DIR.img.gz
 			mv ${IMAGE_DIR}.img.csv $STORAGE_PATH
-			mv -f $IMAGE_DIR.img.gz $STORAGE_PATH/image
+			mv -f $IMAGE_DIR.img.gz $STORAGE_PATH
 		;;
 		*)
 		echo "[ADV] copy_image_to_storage: invalid parameter #1!"
@@ -476,23 +481,23 @@ else #"$PRODUCT" != "$VER_PREFIX"
 
 		echo "[ADV] generate normal image"
 		DEPLOY_IMAGE_PATH="$CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/deploy/images/${KERNEL_CPU_TYPE}${PRODUCT}"
-		IMAGE_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$MEMORY"_"$DATE"
+		IMAGE_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$DATE"
 		prepare_images normal $IMAGE_DIR
 		copy_image_to_storage normal
 
 		echo "[ADV] create flash tool"
-		FLASH_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$MEMORY"_flash_tool
+		FLASH_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_flash_tool
 		prepare_images flash $FLASH_DIR
 		copy_image_to_storage flash
 
 		echo "[ADV] create individually script tool "
-		INDIVIDUAL_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$MEMORY"_individually_script_tool
+		INDIVIDUAL_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_individually_script_tool
 		prepare_images individually $INDIVIDUAL_DIR
 		copy_image_to_storage individually
 
 		echo "[ADV] create imx-boot files"
 		DEPLOY_IMX_BOOT_PATH="$CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/work/${KERNEL_CPU_TYPE}${PRODUCT}-poky-linux/imx-boot/*/git"
-		IMX_BOOT_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$MEMORY"_imx-boot
+		IMX_BOOT_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_imx-boot
 		prepare_images imx-boot $IMX_BOOT_DIR
 		copy_image_to_storage imx-boot
 
@@ -502,7 +507,7 @@ else #"$PRODUCT" != "$VER_PREFIX"
 
 		echo "[ADV] create misc files"
 		DEPLOY_MISC_PATH="$CURR_PATH/$ROOT_DIR/$BUILDALL_DIR/$TMP_DIR/deploy/images/${KERNEL_CPU_TYPE}${PRODUCT}"
-		MISC_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_"$MEMORY"_misc
+		MISC_DIR="$OFFICIAL_VER"_"$CPU_TYPE"_misc
 		prepare_images misc $MISC_DIR
 		copy_image_to_storage misc
 
